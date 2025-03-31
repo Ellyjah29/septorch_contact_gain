@@ -66,6 +66,11 @@
         button:hover {
             background: #0056b3;
         }
+        #loading {
+            display: none;
+            color: yellow;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -73,12 +78,14 @@
         <h2>Admin Login</h2>
         <input type="password" id="adminPassword" placeholder="Enter Admin Password">
         <button onclick="checkLogin()">Login</button>
+        <p id="loginError" style="color: red; display: none;">Incorrect Password</p>
     </div>
 
     <div id="adminPanel" class="container" style="display: none;">
         <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo" class="logo">
         <h1>Admin Panel</h1>
         <button onclick="loadUsers()">Load Users</button>
+        <p id="loading">Loading users...</p>
         <table>
             <thead>
                 <tr>
@@ -99,14 +106,24 @@
         function checkLogin() {
             const password = document.getElementById("adminPassword").value;
             ADMIN_PASSWORD = password;
-            document.getElementById("loginSection").style.display = "none";
-            document.getElementById("adminPanel").style.display = "block";
+            fetch('/api/getUsers', { headers: { 'x-admin-token': ADMIN_PASSWORD } })
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById("loginSection").style.display = "none";
+                        document.getElementById("adminPanel").style.display = "block";
+                        loadUsers();
+                    } else {
+                        document.getElementById("loginError").style.display = "block";
+                    }
+                });
         }
 
         function loadUsers() {
+            document.getElementById("loading").style.display = "block";
             fetch('/api/getUsers', { headers: { 'x-admin-token': ADMIN_PASSWORD } })
                 .then(response => response.json())
                 .then(data => {
+                    document.getElementById("loading").style.display = "none";
                     let tableBody = document.getElementById("userTableBody");
                     tableBody.innerHTML = "";
                     data.forEach(user => {
@@ -118,6 +135,9 @@
                         </tr>`;
                         tableBody.innerHTML += row;
                     });
+                })
+                .catch(() => {
+                    document.getElementById("loading").innerText = "Failed to load users. Try again.";
                 });
         }
 
@@ -131,3 +151,4 @@
     </script>
 </body>
 </html>
+
