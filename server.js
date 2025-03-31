@@ -65,27 +65,21 @@ async function sendDailyReminder() {
 }
 setInterval(sendDailyReminder, 24 * 60 * 60 * 1000);
 
-// User Registration
-app.post('/register', async (req, res) => {
-  const { whatsappNumber, email } = req.body;
-  let user = await User.findOne({ whatsappNumber });
-  if (!user) {
-    user = new User({ whatsappNumber, email });
-    await user.save();
-    io.emit('newUser', user);
-  }
-  res.json({ message: 'User registered', referralLink: `/referral/${whatsappNumber}` });
+// Serve Admin Panel
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// Referral Tracking
-app.get('/referral/:whatsappNumber', async (req, res) => {
-  const referrer = await User.findOne({ whatsappNumber: req.params.whatsappNumber });
-  if (referrer) {
-    referrer.referrals += 1;
-    await referrer.save();
-    io.emit('updateReferral', { whatsappNumber: referrer.whatsappNumber, referrals: referrer.referrals });
-  }
-  res.send('Referral recorded!');
+// Get users for Admin Panel
+app.get('/api/getUsers', adminAuth, async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+});
+
+// Remove user
+app.post('/api/removeUser', adminAuth, async (req, res) => {
+  await User.deleteOne({ whatsappNumber: req.body.whatsappNumber });
+  res.json({ message: 'User removed' });
 });
 
 // WhatsApp Pair Code Authentication
@@ -118,34 +112,6 @@ async function startWhatsAppBot() {
   return sock;
 }
 startWhatsAppBot().then(sock => whatsappSock = sock).catch(console.error);
-
-// Send VCF File to WhatsApp Channel
-async function sendVCFToChannel() {
-  const vcfPath = path.join(__dirname, 'contacts.vcf');
-  if (fs.existsSync(vcfPath) && whatsappSock) {
-    const vcfBuffer = fs.readFileSync(vcfPath);
-    await whatsappSock.sendMessage(process.env.WHATSAPP_CHANNEL_JID, { document: vcfBuffer, mimetype: 'text/x-vcard', fileName: 'contacts.vcf' });
-    console.log('VCF file sent to WhatsApp Channel');
-  }
-}
-setInterval(sendVCFToChannel, 24 * 60 * 60 * 1000);
-
-// Admin Panel: Get WhatsApp Status
-app.get('/admin/whatsapp-status', adminAuth, (req, res) => {
-  res.json({ status: whatsappSock ? 'connected' : 'disconnected' });
-});
-
-// Admin Panel: Get Pairing Code
-app.get('/admin/pairing-code', adminAuth, (req, res) => {
-  io.once('pairingCode', (code) => {
-    res.json({ pairingCode: code });
-  });
-});
-
-// Real-time Socket.io for Admin Panel
-io.on('connection', (socket) => {
-  console.log('Admin Panel Connected');
-});
 
 // Start Server
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
