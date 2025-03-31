@@ -6,8 +6,6 @@ const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion 
 const fs = require('fs');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
-const multer = require('multer');
-const schedule = require('node-schedule');
 const http = require('http');
 const socketio = require('socket.io');
 
@@ -27,15 +25,16 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.error('MongoDB Error:', err));
 
-// User Schema
-const UserSchema = new mongoose.Schema({
-  whatsappNumber: String,
+// Contacts Schema (Using existing contacts collection)
+const ContactSchema = new mongoose.Schema({
+  name: String,
+  phone: { type: String, unique: true },
   email: String,
-  referrals: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now },
   joinedChannel: { type: Boolean, default: false },
-  optedOut: { type: Boolean, default: false },
+  optedOut: { type: Boolean, default: false }
 });
-const User = mongoose.model('User', UserSchema);
+const Contact = mongoose.model('Contact', ContactSchema, 'contacts');
 
 // Admin Authentication Middleware
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
@@ -53,7 +52,7 @@ const transporter = nodemailer.createTransport({
 
 // Send Daily Email Reminders
 async function sendDailyReminder() {
-  const users = await User.find({ joinedChannel: false, optedOut: false });
+  const users = await Contact.find({ joinedChannel: false, optedOut: false });
   users.forEach(user => {
     transporter.sendMail({
       from: process.env.EMAIL,
@@ -70,15 +69,15 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// Get users for Admin Panel
+// Get users from contacts collection
 app.get('/api/getUsers', adminAuth, async (req, res) => {
-  const users = await User.find();
+  const users = await Contact.find();
   res.json(users);
 });
 
-// Remove user
+// Remove user from contacts collection
 app.post('/api/removeUser', adminAuth, async (req, res) => {
-  await User.deleteOne({ whatsappNumber: req.body.whatsappNumber });
+  await Contact.deleteOne({ phone: req.body.phone });
   res.json({ message: 'User removed' });
 });
 
@@ -115,3 +114,4 @@ startWhatsAppBot().then(sock => whatsappSock = sock).catch(console.error);
 
 // Start Server
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    
