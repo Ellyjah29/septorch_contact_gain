@@ -29,41 +29,106 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            background: rgba(255, 255, 255, 0.1);
         }
         table, th, td {
             border: 1px solid white;
         }
         th, td {
             padding: 10px;
-            text-align: left;
+            text-align: center;
         }
         .powered-by {
             margin-top: 20px;
             font-size: 14px;
             color: #bbb;
         }
+        .login-container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            margin: 100px auto;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo" class="logo">
-        <h1>Admin Panel</h1>
-        <button onclick="loadUsers()">Load Users</button>
-        <table>
-            <thead>
-                <tr>
-                    <th>WhatsApp Number</th>
-                    <th>Referrals</th>
-                    <th>Joined Channel</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="userTableBody">
-                <!-- User data will be populated here -->
-            </tbody>
-        </table>
-        <p class="powered-by">Powered by Septorch</p>
-    </div>
-    <script src="script.js"></script>
+    <div id="loginSection" class="login-container">
+        <h2>Admin Login</h2>
+        <input type="password" id="adminPassword" placeholder="Enter Admin Password">
+        <button onclick="checkLogin()">Login</button>
+    </div><div id="adminPanel" class="container" style="display: none;">
+    <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo" class="logo">
+    <h1>Admin Panel</h1>
+    <button onclick="loadUsers()">Load Users</button>
+    <table>
+        <thead>
+            <tr>
+                <th>WhatsApp Number</th>
+                <th>Referrals</th>
+                <th>Joined Channel</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="userTableBody">
+            <!-- User data will be populated here -->
+        </tbody>
+    </table>
+    <p class="powered-by">Powered by Septorch</p>
+</div>
+
+<script>
+    function checkLogin() {
+        const password = document.getElementById("adminPassword").value;
+        if (password === "your_secure_password") {
+            document.getElementById("loginSection").style.display = "none";
+            document.getElementById("adminPanel").style.display = "block";
+        } else {
+            alert("Incorrect password!");
+        }
+    }
+
+    function loadUsers() {
+        fetch('/api/getUsers')
+            .then(response => response.json())
+            .then(data => {
+                let tableBody = document.getElementById("userTableBody");
+                tableBody.innerHTML = "";
+                data.forEach(user => {
+                    let row = `<tr>
+                        <td>${user.whatsappNumber}</td>
+                        <td>${user.referrals}</td>
+                        <td>${user.joinedChannel ? "Yes" : "No"}</td>
+                        <td><button onclick="removeUser('${user.whatsappNumber}')">Remove</button></td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            });
+    }
+
+    function removeUser(whatsappNumber) {
+        fetch('/api/removeUser', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({whatsappNumber})
+        }).then(() => loadUsers());
+    }
+</script>
+
 </body>
 </html>
