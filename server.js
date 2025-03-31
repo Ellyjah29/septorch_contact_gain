@@ -30,7 +30,7 @@ const ContactSchema = new mongoose.Schema({
   name: String,
   phone: { type: String, unique: true },
   email: String,
-  createdAt: { type: Date, default: Date.now },
+  referrals: { type: Number, default: 0 },
   joinedChannel: { type: Boolean, default: false },
   optedOut: { type: Boolean, default: false }
 });
@@ -58,7 +58,7 @@ async function sendDailyReminder() {
       from: process.env.EMAIL,
       to: user.email,
       subject: 'Join Our WhatsApp Channel',
-      html: `<p>Join our WhatsApp channel: <a href="${process.env.WHATSAPP_CHANNEL}">Click here</a></p>`
+      html: `<p>Hello ${user.name},<br>Join our WhatsApp channel: <a href="${process.env.WHATSAPP_CHANNEL}">Click here</a></p>`
     });
   });
 }
@@ -71,14 +71,22 @@ app.get('/admin', (req, res) => {
 
 // Get users from contacts collection
 app.get('/api/getUsers', adminAuth, async (req, res) => {
-  const users = await Contact.find();
-  res.json(users);
+  try {
+    const users = await Contact.find();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
 });
 
 // Remove user from contacts collection
 app.post('/api/removeUser', adminAuth, async (req, res) => {
-  await Contact.deleteOne({ phone: req.body.phone });
-  res.json({ message: 'User removed' });
+  try {
+    await Contact.deleteOne({ phone: req.body.phone });
+    res.json({ message: 'User removed' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove user' });
+  }
 });
 
 // WhatsApp Pair Code Authentication
@@ -114,4 +122,3 @@ startWhatsAppBot().then(sock => whatsappSock = sock).catch(console.error);
 
 // Start Server
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-    
