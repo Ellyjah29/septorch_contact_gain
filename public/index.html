@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,6 +21,21 @@
     <footer>
         <p>Powered by <strong>Septorch</strong></p>
     </footer>
-    <script src="script.js"></script>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const whatsappNumber = document.getElementById('whatsappNumber').value;const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, phone: whatsappNumber, email })
+        });
+
+        const data = await response.json();
+        document.getElementById('message').innerText = data.message || data.error;
+    });
+</script>
+
 </body>
 </html>
