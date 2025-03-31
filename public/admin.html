@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed;
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            color: white;
+            text-align: center;
+        }
+        .container {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 800px;
+            margin: 50px auto;
+        }
+        img.logo {
+            width: 150px;
+            display: block;
+            margin: 0 auto 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid white;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        .powered-by {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #bbb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo" class="logo">
+        <h1>Admin Panel</h1>
+        <button onclick="loadUsers()">Load Users</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>WhatsApp Number</th>
+                    <th>Referrals</th>
+                    <th>Joined Channel</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                <!-- User data will be populated here -->
+            </tbody>
+        </table>
+        <p class="powered-by">Powered by Septorch</p>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
