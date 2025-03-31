@@ -1,14 +1,16 @@
-document.addEventListener("DOMContentLoaded", function () { const registerForm = document.getElementById("registerForm"); const whatsappNumberInput = document.getElementById("whatsappNumber"); const nameInput = document.createElement("input"); const emailInput = document.createElement("input"); const referralLinkDisplay = document.getElementById("referralLinkDisplay");
+document.addEventListener("DOMContentLoaded", function () { const registerForm = document.getElementById("registerForm"); const whatsappNumberInput = document.getElementById("whatsappNumber"); const referralLinkDisplay = document.getElementById("referralLinkDisplay");
 
-// Add Name and Email fields dynamically
-nameInput.setAttribute("type", "text");
-nameInput.setAttribute("id", "name");
-nameInput.setAttribute("placeholder", "Your Name");
+// Create and insert Name and Email fields dynamically
+const nameInput = document.createElement("input");
+nameInput.type = "text";
+nameInput.id = "name";
+nameInput.placeholder = "Your Name";
 nameInput.required = true;
 
-emailInput.setAttribute("type", "email");
-emailInput.setAttribute("id", "email");
-emailInput.setAttribute("placeholder", "Your Email");
+const emailInput = document.createElement("input");
+emailInput.type = "email";
+emailInput.id = "email";
+emailInput.placeholder = "Your Email";
 emailInput.required = true;
 
 registerForm.insertBefore(nameInput, whatsappNumberInput);
@@ -32,9 +34,9 @@ if (registerForm) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name, email, whatsappNumber })
             });
-
+            
             const data = await response.json();
-            if (data.message === "User registered") {
+            if (response.ok) {
                 referralLinkDisplay.innerHTML = `<p>Your referral link: <a href="${data.referralLink}" target="_blank">${data.referralLink}</a></p>`;
             } else {
                 alert("Error: " + data.message);
