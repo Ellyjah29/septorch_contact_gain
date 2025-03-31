@@ -1,134 +1,117 @@
-<!DOCTYPE html><html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        body {
-            background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed;
-            background-size: cover;
-            font-family: Arial, sans-serif;
-            color: white;
-            text-align: center;
-        }
-        .container {
-            background: rgba(0, 0, 0, 0.7);
-            padding: 20px;
-            border-radius: 10px;
-            width: 80%;
-            max-width: 800px;
-            margin: 50px auto;
-        }
-        img.logo {
-            width: 150px;
-            display: block;
-            margin: 0 auto 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-        table, th, td {
-            border: 1px solid white;
-        }
-        th, td {
-            padding: 10px;
-            text-align: center;
-        }
-        .powered-by {
-            margin-top: 20px;
-            font-size: 14px;
-            color: #bbb;
-        }
-        .login-container {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            width: 300px;
-            margin: 100px auto;
-        }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 5px;
-        }
-        button {
-            background: #007bff;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-    </style>
-</head>
-<body>
-    <div id="loginSection" class="login-container">
-        <h2>Admin Login</h2>
-        <input type="password" id="adminPassword" placeholder="Enter Admin Password">
-        <button onclick="checkLogin()">Login</button>
-    </div><div id="adminPanel" class="container" style="display: none;">
-    <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo" class="logo">
-    <h1>Admin Panel</h1>
-    <button onclick="loadUsers()">Load Users</button>
-    <table>
-        <thead>
-            <tr>
-                <th>WhatsApp Number</th>
-                <th>Referrals</th>
-                <th>Joined Channel</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="userTableBody">
-            <!-- User data will be populated here -->
-        </tbody>
-    </table>
-    <p class="powered-by">Powered by Septorch</p>
-</div>
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const nodemailer = require('nodemailer');
+const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const fs = require('fs');
+const path = require('path');
+const rateLimit = require('express-rate-limit');
+const multer = require('multer');
+const schedule = require('node-schedule');
+const http = require('http');
+const socketio = require('socket.io');
 
-<script>
-    function checkLogin() {
-        const password = document.getElementById("adminPassword").value;
-        if (password === "your_secure_password") {
-            document.getElementById("loginSection").style.display = "none";
-            document.getElementById("adminPanel").style.display = "block";
-        } else {
-            alert("Incorrect password!");
-        }
+const app = express();
+const server = http.createServer(app);
+const io = socketio(server);
+const PORT = process.env.PORT || 3000;
+
+// Rate limiting for security
+const limiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
+app.use(limiter);
+app.use(express.json());
+app.use(express.static('public'));
+
+// MongoDB Connection
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('MongoDB Connected'))
+  .catch(err => console.error('MongoDB Error:', err));
+
+// User Schema
+const UserSchema = new mongoose.Schema({
+  whatsappNumber: String,
+  email: String,
+  referrals: { type: Number, default: 0 },
+  joinedChannel: { type: Boolean, default: false },
+  optedOut: { type: Boolean, default: false },
+});
+const User = mongoose.model('User', UserSchema);
+
+// Admin Authentication Middleware
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+function adminAuth(req, res, next) {
+  const token = req.headers['x-admin-token'];
+  if (token === ADMIN_PASSWORD) next();
+  else res.status(401).send('Unauthorized');
+}
+
+// Email Setup
+const transporter = nodemailer.createTransport({
+  service: 'Gmail',
+  auth: { user: process.env.EMAIL, pass: process.env.EMAIL_PASS },
+});
+
+// Send Daily Email Reminders
+async function sendDailyReminder() {
+  const users = await User.find({ joinedChannel: false, optedOut: false });
+  users.forEach(user => {
+    transporter.sendMail({
+      from: process.env.EMAIL,
+      to: user.email,
+      subject: 'Join Our WhatsApp Channel',
+      html: `<p>Join our WhatsApp channel: <a href="${process.env.WHATSAPP_CHANNEL}">Click here</a></p>`
+    });
+  });
+}
+setInterval(sendDailyReminder, 24 * 60 * 60 * 1000);
+
+// Serve Admin Panel
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Get users for Admin Panel
+app.get('/api/getUsers', adminAuth, async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+});
+
+// Remove user
+app.post('/api/removeUser', adminAuth, async (req, res) => {
+  await User.deleteOne({ whatsappNumber: req.body.whatsappNumber });
+  res.json({ message: 'User removed' });
+});
+
+// WhatsApp Pair Code Authentication
+let whatsappSock;
+async function startWhatsAppBot() {
+  const { state, saveCreds } = await useMultiFileAuthState('auth_info');
+  const { version } = await fetchLatestBaileysVersion();
+  const sock = makeWASocket({
+    version,
+    auth: state,
+    printQRInTerminal: false,
+    getMessage: async () => ({ conversation: '' }),
+  });
+  
+  sock.ev.on('creds.update', saveCreds);
+  sock.ev.on('connection.update', ({ connection, lastDisconnect, pairingCode }) => {
+    if (connection === 'open') {
+      console.log('WhatsApp Bot Connected');
+      io.emit('whatsappStatus', 'connected');
+    } else if (connection === 'close') {
+      console.log('WhatsApp Bot Disconnected, reconnecting...');
+      io.emit('whatsappStatus', 'disconnected');
+      startWhatsAppBot();
     }
-
-    function loadUsers() {
-        fetch('/api/getUsers')
-            .then(response => response.json())
-            .then(data => {
-                let tableBody = document.getElementById("userTableBody");
-                tableBody.innerHTML = "";
-                data.forEach(user => {
-                    let row = `<tr>
-                        <td>${user.whatsappNumber}</td>
-                        <td>${user.referrals}</td>
-                        <td>${user.joinedChannel ? "Yes" : "No"}</td>
-                        <td><button onclick="removeUser('${user.whatsappNumber}')">Remove</button></td>
-                    </tr>`;
-                    tableBody.innerHTML += row;
-                });
-            });
+    if (pairingCode) {
+      console.log(`Pairing Code: ${pairingCode}`);
+      io.emit('pairingCode', pairingCode);
     }
+  });
+  return sock;
+}
+startWhatsAppBot().then(sock => whatsappSock = sock).catch(console.error);
 
-    function removeUser(whatsappNumber) {
-        fetch('/api/removeUser', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({whatsappNumber})
-        }).then(() => loadUsers());
-    }
-</script>
-
-</body>
-</html>
+// Start Server
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
