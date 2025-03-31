@@ -89,6 +89,21 @@ app.post('/api/removeUser', adminAuth, async (req, res) => {
   }
 });
 
+// Edit user details
+app.post('/api/editUser', adminAuth, async (req, res) => {
+  try {
+    const { oldPhone, newName, newPhone } = req.body;
+    const user = await Contact.findOne({ phone: oldPhone });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.name = newName;
+    user.phone = newPhone;
+    await user.save();
+    res.json({ message: 'User updated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
 // WhatsApp Pair Code Authentication
 let whatsappSock;
 async function startWhatsAppBot() {
