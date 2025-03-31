@@ -52,15 +52,19 @@ const transporter = nodemailer.createTransport({
 
 // Send Daily Email Reminders
 async function sendDailyReminder() {
-  const users = await Contact.find({ joinedChannel: false, optedOut: false });
-  users.forEach(user => {
-    transporter.sendMail({
-      from: process.env.EMAIL,
-      to: user.email,
-      subject: 'Join Our WhatsApp Channel',
-      html: `<p>Hello ${user.name},<br>Join our WhatsApp channel: <a href="${process.env.WHATSAPP_CHANNEL}">Click here</a></p>`
+  try {
+    const users = await Contact.find({ joinedChannel: false, optedOut: false });
+    users.forEach(user => {
+      transporter.sendMail({
+        from: process.env.EMAIL,
+        to: user.email,
+        subject: 'Join Our WhatsApp Channel',
+        html: `<p>Hello ${user.name},<br>Join our WhatsApp channel: <a href="${process.env.WHATSAPP_CHANNEL}">Click here</a></p>`
+      });
     });
-  });
+  } catch (error) {
+    console.error('Error sending daily reminders:', error);
+  }
 }
 setInterval(sendDailyReminder, 24 * 60 * 60 * 1000);
 
@@ -107,31 +111,35 @@ app.post('/api/editUser', adminAuth, async (req, res) => {
 // WhatsApp Pair Code Authentication
 let whatsappSock;
 async function startWhatsAppBot() {
-  const { state, saveCreds } = await useMultiFileAuthState('auth_info');
-  const { version } = await fetchLatestBaileysVersion();
-  const sock = makeWASocket({
-    version,
-    auth: state,
-    printQRInTerminal: false,
-    getMessage: async () => ({ conversation: '' }),
-  });
-  
-  sock.ev.on('creds.update', saveCreds);
-  sock.ev.on('connection.update', ({ connection, lastDisconnect, pairingCode }) => {
-    if (connection === 'open') {
-      console.log('WhatsApp Bot Connected');
-      io.emit('whatsappStatus', 'connected');
-    } else if (connection === 'close') {
-      console.log('WhatsApp Bot Disconnected, reconnecting...');
-      io.emit('whatsappStatus', 'disconnected');
-      startWhatsAppBot();
-    }
-    if (pairingCode) {
-      console.log(`Pairing Code: ${pairingCode}`);
-      io.emit('pairingCode', pairingCode);
-    }
-  });
-  return sock;
+  try {
+    const { state, saveCreds } = await useMultiFileAuthState('auth_info');
+    const { version } = await fetchLatestBaileysVersion();
+    const sock = makeWASocket({
+      version,
+      auth: state,
+      printQRInTerminal: false,
+      getMessage: async () => ({ conversation: '' }),
+    });
+    
+    sock.ev.on('creds.update', saveCreds);
+    sock.ev.on('connection.update', ({ connection, lastDisconnect, pairingCode }) => {
+      if (connection === 'open') {
+        console.log('WhatsApp Bot Connected');
+        io.emit('whatsappStatus', 'connected');
+      } else if (connection === 'close') {
+        console.log('WhatsApp Bot Disconnected, reconnecting...');
+        io.emit('whatsappStatus', 'disconnected');
+        startWhatsAppBot();
+      }
+      if (pairingCode) {
+        console.log(`Pairing Code: ${pairingCode}`);
+        io.emit('pairingCode', pairingCode);
+      }
+    });
+    return sock;
+  } catch (error) {
+    console.error('Error starting WhatsApp bot:', error);
+  }
 }
 startWhatsAppBot().then(sock => whatsappSock = sock).catch(console.error);
 
