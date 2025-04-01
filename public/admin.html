@@ -103,6 +103,7 @@
                             <td>${user.joinedChannel ? "Yes" : "No"}</td>
                             <td>
                                 <button onclick="removeUser('${user.phone}')">Remove</button>
+                                <button onclick="editUser('${user.phone}')">Edit</button>
                             </td>
                         </tr>`;
                         tableBody.innerHTML += row;
@@ -120,6 +121,18 @@
                 headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
                 body: JSON.stringify({ phone })
             }).then(() => loadUsers());
+        }
+
+        function editUser(phone) {
+            const newName = prompt("Enter new name:");
+            const newPhone = prompt("Enter new phone number:");
+            if (newName && newPhone) {
+                fetch('/api/editUser', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
+                    body: JSON.stringify({ oldPhone: phone, newName, newPhone })
+                }).then(() => loadUsers());
+            }
         }
     </script>
 </body>
