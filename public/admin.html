@@ -1,152 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        body {
-            background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed;
-            background-size: cover;
-            font-family: Arial, sans-serif;
-            color: white;
-            text-align: center;
-        }
-        .container, .login-container {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            margin: 50px auto;
-            width: 80%;
-            max-width: 400px;
-        }
-        .hidden { display: none; }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 5px;
-        }
-        button { background: #007bff; color: white; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .error-msg { color: red; }
-        .loading { font-style: italic; color: lightgray; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 15px 0;
+      text-align: center;
+      font-size: 24px;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 20px;
+      justify-content: center;
+    }
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      width: 300px;
+      padding: 20px;
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .card h3 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #007bff;
+    }
+    .card p {
+      color: #555;
+      margin-bottom: 15px;
+    }
+    .card button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+    }
+    .card button:hover {
+      background-color: #0056b3;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    .form-group button {
+      width: 100%;
+      padding: 10px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .form-group button:hover {
+      background-color: #218838;
+    }
+    footer {
+      text-align: center;
+      padding: 10px;
+      background-color: #343a40;
+      color: white;
+      position: fixed;
+      width: 100%;
+      bottom: 0;
+    }
+  </style>
 </head>
 <body>
-    <div id="loginSection" class="login-container">
-        <h2>Admin Login</h2>
-        <input type="password" id="adminPassword" placeholder="Enter Admin Password">
-        <button onclick="checkLogin()">Login</button>
-        <p id="errorMsg" class="error-msg hidden">Invalid password</p>
-    </div>
-    
-    <div id="adminPanel" class="container hidden">
-        <h1>Admin Panel</h1>
-        <button onclick="loadUsers()">Load Users</button>
-        <p id="loadingMsg" class="loading hidden">Loading users...</p>
-        <table>
-            <thead>
-                <tr>
-                    <th>Contact Name</th>
-                    <th>WhatsApp Number</th>
-                    <th>Referrals</th>
-                    <th>Joined Channel</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="userTableBody"></tbody>
-        </table>
+
+  <header>
+    Admin Panel - WhatsApp Contact Gain
+  </header>
+
+  <div class="container">
+    <!-- Manage Users Card -->
+    <div class="card">
+      <h3>Manage Users</h3>
+      <p>View, edit, or remove users from the system.</p>
+      <button onclick="window.location.href='/api/getUsers'">View Users</button>
     </div>
 
-    <script>
-        let ADMIN_PASSWORD = "";
+    <!-- Add User Card -->
+    <div class="card">
+      <h3>Add User</h3>
+      <p>Register a new user to the system.</p>
+      <button onclick="window.location.href='/admin/addUser'">Add User</button>
+    </div>
 
-        // Login function to authenticate admin
-        function checkLogin() {
-            const password = document.getElementById("adminPassword").value;
-            fetch('/api/adminLogin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message === 'Login successful') {
-                    ADMIN_PASSWORD = password;
-                    document.getElementById("loginSection").classList.add("hidden");
-                    document.getElementById("adminPanel").classList.remove("hidden");
-                } else {
-                    document.getElementById("errorMsg").classList.remove("hidden");
-                }
-            }).catch(error => {
-                console.error("Error during login:", error);
-                document.getElementById("errorMsg").innerText = "Error communicating with the server.";
-                document.getElementById("errorMsg").classList.remove("hidden");
-            });
-        }
+    <!-- Edit User Card -->
+    <div class="card">
+      <h3>Edit User</h3>
+      <p>Edit existing user's details.</p>
+      <button onclick="window.location.href='/admin/editUser'">Edit User</button>
+    </div>
 
-        // Load all users into the table
-        function loadUsers() {
-            document.getElementById("loadingMsg").classList.remove("hidden");
-            fetch('/api/getUsers', { 
-                headers: { 'x-admin-token': ADMIN_PASSWORD } 
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById("loadingMsg").classList.add("hidden");
-                let tableBody = document.getElementById("userTableBody");
-                tableBody.innerHTML = "";
-                data.forEach(user => {
-                    let row = `<tr>
-                        <td>${user.name || "Unknown"}</td>
-                        <td>${user.phone}</td>
-                        <td>${user.referrals || 0}</td>
-                        <td>${user.joinedChannel ? "Yes" : "No"}</td>
-                        <td>
-                            <button onclick="removeUser('${user.phone}')">Remove</button>
-                            <button onclick="editUser('${user.phone}')">Edit</button>
-                        </td>
-                    </tr>`;
-                    tableBody.innerHTML += row;
-                });
-            })
-            .catch(error => {
-                document.getElementById("loadingMsg").classList.add("hidden");
-                alert("Failed to load users.");
-                console.error("Error loading users:", error);
-            });
-        }
+    <!-- Remove User Card -->
+    <div class="card">
+      <h3>Remove User</h3>
+      <p>Delete a user from the system.</p>
+      <button onclick="window.location.href='/admin/removeUser'">Remove User</button>
+    </div>
+  </div>
 
-        // Remove user from database
-        function removeUser(phone) {
-            if (confirm(`Are you sure you want to remove the user with phone number ${phone}?`)) {
-                fetch('/api/removeUser', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
-                    body: JSON.stringify({ phone })
-                })
-                .then(() => loadUsers())
-                .catch(error => console.error("Error removing user:", error));
-            }
-        }
+  <!-- Add User Form (Example) -->
+  <div class="form-container" style="padding: 20px;">
+    <h3>Add New User</h3>
+    <form id="addUserForm" action="/api/register" method="POST">
+      <div class="form-group">
+        <input type="text" name="name" placeholder="Enter name" required>
+      </div>
+      <div class="form-group">
+        <input type="text" name="phone" placeholder="Enter phone number" required>
+      </div>
+      <div class="form-group">
+        <input type="email" name="email" placeholder="Enter email" required>
+      </div>
+      <div class="form-group">
+        <button type="submit">Add User</button>
+      </div>
+    </form>
+  </div>
 
-        // Edit user details
-        function editUser(phone) {
-            const newName = prompt("Enter new name:");
-            const newPhone = prompt("Enter new phone number:");
-            if (newName && newPhone) {
-                fetch('/api/editUser', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
-                    body: JSON.stringify({ oldPhone: phone, newName, newPhone })
-                })
-                .then(() => loadUsers())
-                .catch(error => console.error("Error editing user:", error));
-            }
-        }
-    </script>
+  <footer>
+    Powered by <a href="https://www.septorch.com" target="_blank" style="color: white; text-decoration: none;">Septorch</a> | All Rights Reserved
+  </footer>
+
 </body>
 </html>
