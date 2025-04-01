@@ -19,7 +19,7 @@
             border-radius: 10px;
             margin: 50px auto;
             width: 80%;
-            max-width: 400px;
+            max-width: 600px;
         }
         .hidden { display: none; }
         input, button {
@@ -46,6 +46,12 @@
     <div id="adminPanel" class="container hidden">
         <h1>Admin Panel</h1>
         <button onclick="loadUsers()">Load Users</button>
+        <button onclick="uploadVCF()">Upload Custom VCF</button>
+        <button onclick="scheduleAnnouncement()">Schedule WhatsApp Announcement</button>
+        <button onclick="exportUsers()">Export User Data</button>
+        <button onclick="checkBotStatus()">Check WhatsApp Status</button>
+        <button onclick="generatePairCode()">Generate Pair Code</button>
+        
         <p id="loadingMsg" class="loading hidden">Loading users...</p>
         <table>
             <thead>
@@ -64,7 +70,6 @@
     <script>
         let ADMIN_PASSWORD = "";
 
-        // Login function to authenticate admin
         function checkLogin() {
             const password = document.getElementById("adminPassword").value;
             fetch('/api/adminLogin', {
@@ -81,22 +86,13 @@
                 } else {
                     document.getElementById("errorMsg").classList.remove("hidden");
                 }
-            }).catch(error => {
-                console.error("Error during login:", error);
-                document.getElementById("errorMsg").innerText = "Error communicating with the server.";
-                document.getElementById("errorMsg").classList.remove("hidden");
             });
         }
 
-        // Load all users into the table
         function loadUsers() {
-            document.getElementById("loadingMsg").classList.remove("hidden");
-            fetch('/api/getUsers', { 
-                headers: { 'x-admin-token': ADMIN_PASSWORD } 
-            })
+            fetch('/api/getUsers', { headers: { 'x-admin-token': ADMIN_PASSWORD } })
             .then(response => response.json())
             .then(data => {
-                document.getElementById("loadingMsg").classList.add("hidden");
                 let tableBody = document.getElementById("userTableBody");
                 tableBody.innerHTML = "";
                 data.forEach(user => {
@@ -112,40 +108,35 @@
                     </tr>`;
                     tableBody.innerHTML += row;
                 });
-            })
-            .catch(error => {
-                document.getElementById("loadingMsg").classList.add("hidden");
-                alert("Failed to load users.");
-                console.error("Error loading users:", error);
             });
         }
 
-        // Remove user from database
-        function removeUser(phone) {
-            if (confirm(`Are you sure you want to remove the user with phone number ${phone}?`)) {
-                fetch('/api/removeUser', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
-                    body: JSON.stringify({ phone })
-                })
-                .then(() => loadUsers())
-                .catch(error => console.error("Error removing user:", error));
-            }
+        function uploadVCF() {
+            alert("Feature to upload VCF will be implemented.");
         }
 
-        // Edit user details
-        function editUser(phone) {
-            const newName = prompt("Enter new name:");
-            const newPhone = prompt("Enter new phone number:");
-            if (newName && newPhone) {
-                fetch('/api/editUser', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
-                    body: JSON.stringify({ oldPhone: phone, newName, newPhone })
-                })
-                .then(() => loadUsers())
-                .catch(error => console.error("Error editing user:", error));
-            }
+        function scheduleAnnouncement() {
+            alert("Feature to schedule announcements will be implemented.");
+        }
+
+        function exportUsers() {
+            window.location.href = '/api/exportUsers';
+        }
+
+        function checkBotStatus() {
+            fetch('/api/botStatus', { headers: { 'x-admin-token': ADMIN_PASSWORD } })
+            .then(response => response.json())
+            .then(data => {
+                alert(`Bot Status: ${data.status}`);
+            });
+        }
+
+        function generatePairCode() {
+            fetch('/api/generatePairCode', { headers: { 'x-admin-token': ADMIN_PASSWORD } })
+            .then(response => response.json())
+            .then(data => {
+                alert(`Pair Code: ${data.pairCode}`);
+            });
         }
     </script>
 </body>
