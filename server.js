@@ -161,4 +161,37 @@ async function startWhatsAppBot() {
         } else {
           console.log('WhatsApp logged out. Needs re-authentication.');
           io.emit('whatsappStatus', 'loggedOut');
-            }
+        }
+      } else if (connection === 'connecting') {
+        console.log('WhatsApp Bot Connecting...');
+        io.emit('whatsappStatus', 'connecting');
+      }
+    });
+
+    sock.ev.on('qr', qr => {
+      console.log('QR Code:', qr);
+      io.emit('pairingCode', qr);
+    });
+
+    whatsappSock = sock;
+  } catch (error) {
+    console.error("Error in WhatsApp bot initialization:", error);
+    io.emit('whatsappStatus', 'error');
+  }
+}
+
+// Start the WhatsApp Bot
+startWhatsAppBot();
+
+// WebSocket Connection
+io.on('connection', socket => {
+  console.log('A user connected');
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
+});
+
+// Server Start
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
