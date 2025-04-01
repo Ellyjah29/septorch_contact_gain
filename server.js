@@ -39,15 +39,16 @@ const Contact = mongoose.model('Contact', ContactSchema, 'contacts');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 function adminAuth(req, res, next) {
   const token = req.headers['x-admin-token'];
-  console.log("Received admin token:", token); // Debugging log
+  console.log("Admin Auth Attempt - Received Token:", token); // Debugging log
   if (!token) {
-    console.log('Missing token');
+    console.log('Admin Auth Failed - Missing token');
     return res.status(401).json({ error: 'Missing authentication token' });
   }
   if (token !== ADMIN_PASSWORD) {
-    console.log('Invalid token');
+    console.log('Admin Auth Failed - Invalid token');
     return res.status(403).json({ error: 'Invalid admin password' });
   }
+  console.log('Admin Auth Success');
   next();
 }
 
@@ -111,7 +112,7 @@ app.get('/api/getUsers', adminAuth, async (req, res) => {
 
 app.post('/api/removeUser', adminAuth, async (req, res) => {
   try {
-    console.log("Removing user:", req.body.phone); // Debugging log
+    console.log("Removing user:", req.body.phone);
     await Contact.deleteOne({ phone: req.body.phone });
     res.json({ message: 'User removed' });
   } catch (error) {
@@ -122,7 +123,7 @@ app.post('/api/removeUser', adminAuth, async (req, res) => {
 app.post('/api/editUser', adminAuth, async (req, res) => {
   try {
     const { oldPhone, newName, newPhone } = req.body;
-    console.log("Editing user:", oldPhone, newName, newPhone); // Debugging log
+    console.log("Editing user:", oldPhone, newName, newPhone);
     const user = await Contact.findOne({ phone: oldPhone });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -149,28 +150,15 @@ async function startWhatsAppBot() {
     });
     
     sock.ev.on('creds.update', saveCreds);
-    sock.ev.on('connection.update', ({ connection, lastDisconnect, pairingCode }) => {
+    sock.ev.on('connection.update', ({ connection, lastDisconnect }) => {
       if (connection === 'open') {
         console.log('WhatsApp Bot Connected');
         io.emit('whatsappStatus', 'connected');
       } else if (connection === 'close') {
-        if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) {
-          console.log('Reconnecting...');
-          io.emit('whatsappStatus', 'disconnected');
-          startWhatsAppBot();
-        } else {
-          console.log('WhatsApp logged out. Needs re-authentication.');
-          io.emit('whatsappStatus', 'loggedOut');
-        }
-      } else if (connection === 'connecting') {
-        console.log('WhatsApp Bot Connecting...');
-        io.emit('whatsappStatus', 'connecting');
+        console.log('WhatsApp Disconnected, Restarting...');
+        io.emit('whatsappStatus', 'disconnected');
+        startWhatsAppBot();
       }
-    });
-
-    sock.ev.on('qr', qr => {
-      console.log('QR Code:', qr);
-      io.emit('pairingCode', qr);
     });
 
     whatsappSock = sock;
