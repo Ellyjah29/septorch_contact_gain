@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
-const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, DisconnectReason } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
@@ -127,9 +127,14 @@ async function startWhatsAppBot() {
         console.log('WhatsApp Bot Connected');
         io.emit('whatsappStatus', 'connected');
       } else if (connection === 'close') {
-        console.log('WhatsApp Bot Disconnected, reconnecting...');
-        io.emit('whatsappStatus', 'disconnected');
-        startWhatsAppBot();
+        if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) {
+          console.log('WhatsApp Bot Disconnected, reconnecting...');
+          io.emit('whatsappStatus', 'disconnected');
+          startWhatsAppBot();
+        } else {
+          console.log('WhatsApp logged out. Needs re-authentication.');
+          io.emit('whatsappStatus', 'loggedOut');
+        }
       }
       if (pairingCode) {
         console.log(`Pairing Code: ${pairingCode}`);
