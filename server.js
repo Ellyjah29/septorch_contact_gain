@@ -39,10 +39,13 @@ const Contact = mongoose.model('Contact', ContactSchema, 'contacts');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 function adminAuth(req, res, next) {
   const token = req.headers['x-admin-token'];
+  console.log("Received admin token:", token); // Debugging log
   if (!token) {
+    console.log('Missing token');
     return res.status(401).json({ error: 'Missing authentication token' });
   }
   if (token !== ADMIN_PASSWORD) {
+    console.log('Invalid token');
     return res.status(403).json({ error: 'Invalid admin password' });
   }
   next();
@@ -108,6 +111,7 @@ app.get('/api/getUsers', adminAuth, async (req, res) => {
 
 app.post('/api/removeUser', adminAuth, async (req, res) => {
   try {
+    console.log("Removing user:", req.body.phone); // Debugging log
     await Contact.deleteOne({ phone: req.body.phone });
     res.json({ message: 'User removed' });
   } catch (error) {
@@ -118,8 +122,10 @@ app.post('/api/removeUser', adminAuth, async (req, res) => {
 app.post('/api/editUser', adminAuth, async (req, res) => {
   try {
     const { oldPhone, newName, newPhone } = req.body;
+    console.log("Editing user:", oldPhone, newName, newPhone); // Debugging log
     const user = await Contact.findOne({ phone: oldPhone });
     if (!user) return res.status(404).json({ error: 'User not found' });
+
     user.name = newName;
     user.phone = newPhone;
     await user.save();
@@ -155,19 +161,4 @@ async function startWhatsAppBot() {
         } else {
           console.log('WhatsApp logged out. Needs re-authentication.');
           io.emit('whatsappStatus', 'loggedOut');
-        }
-      }
-      if (pairingCode) {
-        console.log(`Pairing Code: ${pairingCode}`);
-        io.emit('pairingCode', pairingCode);
-      }
-    });
-    return sock;
-  } catch (error) {
-    console.error('Error starting WhatsApp bot:', error);
-  }
-}
-startWhatsAppBot().then(sock => whatsappSock = sock).catch(console.error);
-
-// Start Server
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+            }
