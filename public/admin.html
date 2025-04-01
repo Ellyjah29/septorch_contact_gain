@@ -1,96 +1,106 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Admin Panel - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            width: 100%;
+            max-width: 350px;
+        }
+        .logo {
+            width: 80px;
+            margin-bottom: 1rem;
+        }
+        h2 {
+            color: white;
+            margin-bottom: 1rem;
+        }
+        .input-group {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            padding-left: 40px;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+        }
+        .input-group i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: gray;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .login-btn:hover {
+            background: #0056b3;
+        }
+        .error {
+            color: red;
+            margin-top: 1rem;
+        }
+    </style>
 </head>
 <body>
-    <div class="login-container" id="loginPage">
+    <div class="login-container">
+        <img src="logo.png" alt="Logo" class="logo">
         <h2>Admin Login</h2>
-        <input type="password" id="adminPassword" placeholder="Enter Password">
-        <button onclick="adminLogin()">Login</button>
-        <p id="loginMessage"></p>
+        <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="password" id="password" placeholder="Enter Password">
+        </div>
+        <button class="login-btn" onclick="adminLogin()">Login</button>
+        <p class="error" id="error-message"></p>
     </div>
-
-    <div class="admin-container" id="adminPage" style="display: none;">
-        <header>
-            <img src="logo.png" alt="Logo" class="logo">
-            <h1>Admin Panel</h1>
-            <button onclick="logout()">Logout</button>
-        </header>
-        <section>
-            <h2>WhatsApp Bot Status: <span id="waStatus">Checking...</span></h2>
-        </section>
-        <section>
-            <h2>Users</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Phone</th>
-                        <th>Email</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="userTable"></tbody>
-            </table>
-        </section>
-    </div>
-
     <script>
         function adminLogin() {
-            const password = document.getElementById("adminPassword").value;
-            $.post("/api/adminLogin", { password }, function(response) {
-                localStorage.setItem("adminToken", response.token);
-                showAdminPanel();
-            }).fail(function() {
-                document.getElementById("loginMessage").innerText = "Invalid Password";
-            });
-        }
-
-        function showAdminPanel() {
-            document.getElementById("loginPage").style.display = "none";
-            document.getElementById("adminPage").style.display = "block";
-            fetchUsers();
-        }
-
-        function fetchUsers() {
-            $.ajax({
-                url: "/api/getUsers",
-                headers: { "x-admin-token": localStorage.getItem("adminToken") },
-                success: function(users) {
-                    let rows = "";
-                    users.forEach(user => {
-                        rows += `<tr>
-                                    <td>${user.name}</td>
-                                    <td>${user.phone}</td>
-                                    <td>${user.email}</td>
-                                    <td>
-                                        <button onclick="removeUser('${user.phone}')">Remove</button>
-                                    </td>
-                                 </tr>`;
-                    });
-                    document.getElementById("userTable").innerHTML = rows;
+            const password = document.getElementById('password').value;
+            fetch('/api/adminLogin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('error-message').textContent = data.error;
+                } else {
+                    localStorage.setItem('adminToken', data.token);
+                    window.location.href = 'dashboard.html';
                 }
+            })
+            .catch(() => {
+                document.getElementById('error-message').textContent = 'Login failed';
             });
-        }
-
-        function removeUser(phone) {
-            $.ajax({
-                url: "/api/removeUser",
-                type: "POST",
-                headers: { "x-admin-token": localStorage.getItem("adminToken") },
-                data: { phone },
-                success: fetchUsers
-            });
-        }
-
-        function logout() {
-            localStorage.removeItem("adminToken");
-            location.reload();
         }
     </script>
 </body>
