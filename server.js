@@ -120,7 +120,6 @@ app.post('/api/editUser', adminAuth, async (req, res) => {
     const { oldPhone, newName, newPhone } = req.body;
     const user = await Contact.findOne({ phone: oldPhone });
     if (!user) return res.status(404).json({ error: 'User not found' });
-
     user.name = newName;
     user.phone = newPhone;
     await user.save();
