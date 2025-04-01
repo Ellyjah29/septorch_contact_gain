@@ -80,6 +80,10 @@
                 } else {
                     document.getElementById("errorMsg").classList.remove("hidden");
                 }
+            }).catch(error => {
+                console.error("Error during login:", error);
+                document.getElementById("errorMsg").innerText = "Error communicating with the server.";
+                document.getElementById("errorMsg").classList.remove("hidden");
             });
         }
 
@@ -103,6 +107,10 @@
                         </tr>`;
                         tableBody.innerHTML += row;
                     });
+                }).catch(error => {
+                    document.getElementById("loadingMsg").classList.add("hidden");
+                    alert("Failed to load users.");
+                    console.error("Error loading users:", error);
                 });
         }
 
