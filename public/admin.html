@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,8 +33,6 @@
         button:hover { background: #0056b3; }
         .error-msg { color: red; }
         .loading { font-style: italic; color: lightgray; }
-        table { width: 100%; margin-top: 20px; }
-        th, td { padding: 10px; border-bottom: 1px solid white; }
     </style>
 </head>
 <body>
@@ -42,98 +41,86 @@
         <input type="password" id="adminPassword" placeholder="Enter Admin Password">
         <button onclick="checkLogin()">Login</button>
         <p id="errorMsg" class="error-msg hidden">Invalid password</p>
-    </div><div id="adminPanel" class="container hidden">
-    <h1>Admin Panel</h1>
-    <button onclick="loadUsers()">Load Users</button>
-    <p id="loadingMsg" class="loading hidden">Loading users...</p>
-    <table>
-        <thead>
-            <tr>
-                <th>Contact Name</th>
-                <th>WhatsApp Number</th>
-                <th>Referrals</th>
-                <th>Joined Channel</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="userTableBody"></tbody>
-    </table>
-</div>
+    </div>
+    
+    <div id="adminPanel" class="container hidden">
+        <h1>Admin Panel</h1>
+        <button onclick="loadUsers()">Load Users</button>
+        <p id="loadingMsg" class="loading hidden">Loading users...</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Contact Name</th>
+                    <th>WhatsApp Number</th>
+                    <th>Referrals</th>
+                    <th>Joined Channel</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody"></tbody>
+        </table>
+    </div>
 
-<script>
-    let ADMIN_PASSWORD = "";
+    <script>
+        let ADMIN_PASSWORD = "";
 
-    function checkLogin() {
-        const password = document.getElementById("adminPassword").value;
-        fetch('/api/adminLogin', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                ADMIN_PASSWORD = password;
-                document.getElementById("loginSection").classList.add("hidden");
-                document.getElementById("adminPanel").classList.remove("hidden");
-            } else {
-                document.getElementById("errorMsg").classList.remove("hidden");
-            }
-        }).catch(error => {
-            console.error("Error during login:", error);
-            document.getElementById("errorMsg").innerText = "Error communicating with the server.";
-            document.getElementById("errorMsg").classList.remove("hidden");
-        });
-    }
-
-    function loadUsers() {
-        document.getElementById("loadingMsg").classList.remove("hidden");
-        fetch('/api/getUsers', { headers: { 'x-admin-token': ADMIN_PASSWORD } })
+        function checkLogin() {
+            const password = document.getElementById("adminPassword").value;
+            fetch('/api/adminLogin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            })
             .then(response => response.json())
             .then(data => {
-                document.getElementById("loadingMsg").classList.add("hidden");
-                let tableBody = document.getElementById("userTableBody");
-                tableBody.innerHTML = "";
-                data.forEach(user => {
-                    let row = `<tr>
-                        <td>${user.name || "Unknown"}</td>
-                        <td>${user.phone}</td>
-                        <td>${user.referrals || 0}</td>
-                        <td>${user.joinedChannel ? "Yes" : "No"}</td>
-                        <td>
-                            <button onclick="editUser('${user.phone}', '${user.name}', ${user.referrals})">Edit</button>
-                            <button onclick="removeUser('${user.phone}')">Remove</button>
-                        </td>
-                    </tr>`;
-                    tableBody.innerHTML += row;
-                });
+                if (data.success) {
+                    ADMIN_PASSWORD = password;
+                    document.getElementById("loginSection").classList.add("hidden");
+                    document.getElementById("adminPanel").classList.remove("hidden");
+                } else {
+                    document.getElementById("errorMsg").classList.remove("hidden");
+                }
             }).catch(error => {
-                document.getElementById("loadingMsg").classList.add("hidden");
-                alert("Failed to load users.");
-                console.error("Error loading users:", error);
+                console.error("Error during login:", error);
+                document.getElementById("errorMsg").innerText = "Error communicating with the server.";
+                document.getElementById("errorMsg").classList.remove("hidden");
             });
-    }
+        }
 
-    function editUser(phone, name, referrals) {
-        const newName = prompt("Enter new name:", name);
-        const newReferrals = prompt("Enter new referral count:", referrals);
-        if (newName !== null && newReferrals !== null) {
-            fetch('/api/editUser', {
+        function loadUsers() {
+            document.getElementById("loadingMsg").classList.remove("hidden");
+            fetch('/api/getUsers', { headers: { 'x-admin-token': ADMIN_PASSWORD } })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("loadingMsg").classList.add("hidden");
+                    let tableBody = document.getElementById("userTableBody");
+                    tableBody.innerHTML = "";
+                    data.forEach(user => {
+                        let row = `<tr>
+                            <td>${user.name || "Unknown"}</td>
+                            <td>${user.phone}</td>
+                            <td>${user.referrals || 0}</td>
+                            <td>${user.joinedChannel ? "Yes" : "No"}</td>
+                            <td>
+                                <button onclick="removeUser('${user.phone}')">Remove</button>
+                            </td>
+                        </tr>`;
+                        tableBody.innerHTML += row;
+                    });
+                }).catch(error => {
+                    document.getElementById("loadingMsg").classList.add("hidden");
+                    alert("Failed to load users.");
+                    console.error("Error loading users:", error);
+                });
+        }
+
+        function removeUser(phone) {
+            fetch('/api/removeUser', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
-                body: JSON.stringify({ phone, name: newName, referrals: parseInt(newReferrals) })
+                body: JSON.stringify({ phone })
             }).then(() => loadUsers());
         }
-    }
-
-    function removeUser(phone) {
-        fetch('/api/removeUser', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
-            body: JSON.stringify({ phone })
-        }).then(() => loadUsers());
-    }
-</script>
-
+    </script>
 </body>
 </html>
