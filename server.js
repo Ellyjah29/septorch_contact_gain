@@ -25,7 +25,7 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.error('MongoDB Error:', err));
 
-// Contacts Schema (referral removed)
+// Contacts Schema
 const ContactSchema = new mongoose.Schema({
   name: String,
   phone: { type: String, unique: true },
@@ -40,7 +40,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 function adminAuth(req, res, next) {
   const token = req.headers['x-admin-token'];
   if (token === ADMIN_PASSWORD) next();
-  else res.status(401).send('Unauthorized');
+  else res.status(401).json({ error: 'Unauthorized' });
 }
 
 // Email Setup
@@ -67,25 +67,18 @@ async function sendDailyReminder() {
 }
 setInterval(sendDailyReminder, 24 * 60 * 60 * 1000);
 
-// Registration Endpoint (no referral system)
-// When a user submits their details, they are added to the database and appended to the VCF file.
+// Registration Endpoint
 app.post('/api/register', async (req, res) => {
   try {
     const { name, phone, email } = req.body;
-    if (!name || !phone || !email) {
-      return res.status(400).json({ error: 'All fields are required' });
-    }
+    if (!name || !phone || !email) return res.status(400).json({ error: 'All fields are required' });
     
     let user = await Contact.findOne({ phone });
     if (!user) {
-      user = new Contact({ name, phone, email, joinedChannel: false, optedOut: false });
+      user = new Contact({ name, phone, email });
       await user.save();
-
-      // Append user details to the VCF file
       const vcfEntry = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL:${phone}\nEMAIL:${email}\nEND:VCARD\n`;
-      fs.appendFile('contacts.vcf', vcfEntry, (err) => {
-        if (err) console.error('Failed to update VCF file:', err);
-      });
+      fs.appendFileSync('contacts.vcf', vcfEntry);
     }
     res.json({ message: 'Registered successfully' });
   } catch (error) {
@@ -98,7 +91,7 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// API Routes for Admin
+// Admin API Routes
 app.get('/api/getUsers', adminAuth, async (req, res) => {
   try {
     const users = await Contact.find();
@@ -151,7 +144,7 @@ async function startWhatsAppBot() {
         io.emit('whatsappStatus', 'connected');
       } else if (connection === 'close') {
         if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) {
-          console.log('WhatsApp Bot Disconnected, reconnecting...');
+          console.log('Reconnecting...');
           io.emit('whatsappStatus', 'disconnected');
           startWhatsAppBot();
         } else {
