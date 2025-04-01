@@ -1,3 +1,5 @@
+Server.js
+
 require('dotenv').config(); const express = require('express'); const mongoose = require('mongoose'); const nodemailer = require('nodemailer'); const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, DisconnectReason } = require('@whiskeysockets/baileys'); const fs = require('fs'); const path = require('path'); const rateLimit = require('express-rate-limit'); const http = require('http'); const socketio = require('socket.io');
 
 const app = express(); const server = http.createServer(app); const io = socketio(server); const PORT = process.env.PORT || 3000;
