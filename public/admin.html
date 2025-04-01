@@ -64,6 +64,7 @@
     <script>
         let ADMIN_PASSWORD = "";
 
+        // Login function to authenticate admin
         function checkLogin() {
             const password = document.getElementById("adminPassword").value;
             fetch('/api/adminLogin', {
@@ -73,7 +74,7 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
+                if (data.message === 'Login successful') {
                     ADMIN_PASSWORD = password;
                     document.getElementById("loginSection").classList.add("hidden");
                     document.getElementById("adminPanel").classList.remove("hidden");
@@ -87,42 +88,52 @@
             });
         }
 
+        // Load all users into the table
         function loadUsers() {
             document.getElementById("loadingMsg").classList.remove("hidden");
-            fetch('/api/getUsers', { headers: { 'x-admin-token': ADMIN_PASSWORD } })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById("loadingMsg").classList.add("hidden");
-                    let tableBody = document.getElementById("userTableBody");
-                    tableBody.innerHTML = "";
-                    data.forEach(user => {
-                        let row = `<tr>
-                            <td>${user.name || "Unknown"}</td>
-                            <td>${user.phone}</td>
-                            <td>${user.referrals || 0}</td>
-                            <td>${user.joinedChannel ? "Yes" : "No"}</td>
-                            <td>
-                                <button onclick="removeUser('${user.phone}')">Remove</button>
-                                <button onclick="editUser('${user.phone}')">Edit</button>
-                            </td>
-                        </tr>`;
-                        tableBody.innerHTML += row;
-                    });
-                }).catch(error => {
-                    document.getElementById("loadingMsg").classList.add("hidden");
-                    alert("Failed to load users.");
-                    console.error("Error loading users:", error);
+            fetch('/api/getUsers', { 
+                headers: { 'x-admin-token': ADMIN_PASSWORD } 
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("loadingMsg").classList.add("hidden");
+                let tableBody = document.getElementById("userTableBody");
+                tableBody.innerHTML = "";
+                data.forEach(user => {
+                    let row = `<tr>
+                        <td>${user.name || "Unknown"}</td>
+                        <td>${user.phone}</td>
+                        <td>${user.referrals || 0}</td>
+                        <td>${user.joinedChannel ? "Yes" : "No"}</td>
+                        <td>
+                            <button onclick="removeUser('${user.phone}')">Remove</button>
+                            <button onclick="editUser('${user.phone}')">Edit</button>
+                        </td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
                 });
+            })
+            .catch(error => {
+                document.getElementById("loadingMsg").classList.add("hidden");
+                alert("Failed to load users.");
+                console.error("Error loading users:", error);
+            });
         }
 
+        // Remove user from database
         function removeUser(phone) {
-            fetch('/api/removeUser', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
-                body: JSON.stringify({ phone })
-            }).then(() => loadUsers());
+            if (confirm(`Are you sure you want to remove the user with phone number ${phone}?`)) {
+                fetch('/api/removeUser', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
+                    body: JSON.stringify({ phone })
+                })
+                .then(() => loadUsers())
+                .catch(error => console.error("Error removing user:", error));
+            }
         }
 
+        // Edit user details
         function editUser(phone) {
             const newName = prompt("Enter new name:");
             const newPhone = prompt("Enter new phone number:");
@@ -131,7 +142,9 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
                     body: JSON.stringify({ oldPhone: phone, newName, newPhone })
-                }).then(() => loadUsers());
+                })
+                .then(() => loadUsers())
+                .catch(error => console.error("Error editing user:", error));
             }
         }
     </script>
