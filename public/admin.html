@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -72,75 +73,85 @@
         <h2>Admin Login</h2>
         <input type="password" id="adminPassword" placeholder="Enter Admin Password">
         <button onclick="checkLogin()">Login</button>
-    </div><div id="adminPanel" class="container" style="display: none;">
-    <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo" class="logo">
-    <h1>Admin Panel</h1>
-    <button onclick="loadUsers()">Load Users</button>
-    <table>
-        <thead>
-            <tr>
-                <th>Contact Name</th>
-                <th>WhatsApp Number</th>
-                <th>Referrals</th>
-                <th>Joined Channel</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="userTableBody"></tbody>
-    </table>
-    <p class="powered-by">Powered by Septorch</p>
-</div>
+    </div>
+    <div id="adminPanel" class="container" style="display: none;">
+        <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo" class="logo">
+        <h1>Admin Panel</h1>
+        <button onclick="loadUsers()">Load Users</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>Contact Name</th>
+                    <th>WhatsApp Number</th>
+                    <th>Referrals</th>
+                    <th>Joined Channel</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody"></tbody>
+        </table>
+        <div id="whatsappStatus"></div>
+        <div id="pairingCodeSection">
+            <h3>Pairing Code</h3>
+            <div id="pairingCode"></div>
+        </div>
+        <p class="powered-by">Powered by Septorch</p>
+    </div>
 
-<script>
-    let ADMIN_PASSWORD = "";
+    <script>
+        let ADMIN_PASSWORD = "";
 
-    function checkLogin() {
-        const password = document.getElementById("adminPassword").value;
-        ADMIN_PASSWORD = password;
-        document.getElementById("loginSection").style.display = "none";
-        document.getElementById("adminPanel").style.display = "block";
-    }
+        function checkLogin() {
+            const password = document.getElementById("adminPassword").value;
+            ADMIN_PASSWORD = password;
+            document.getElementById("loginSection").style.display = "none";
+            document.getElementById("adminPanel").style.display = "block";
+        }
 
-    function loadUsers() {
-        fetch('/api/getUsers', { headers: { 'x-admin-token': ADMIN_PASSWORD } })
-            .then(response => response.json())
-            .then(data => {
-                let tableBody = document.getElementById("userTableBody");
-                tableBody.innerHTML = "";
-                data.forEach(user => {
-                    let row = `<tr>
-                        <td><input type='text' value='${user.name || "Unknown"}' id='name-${user.phone}'></td>
-                        <td><input type='text' value='${user.phone}' id='phone-${user.phone}'></td>
-                        <td>${user.referrals}</td>
-                        <td>${user.joinedChannel ? "Yes" : "No"}</td>
-                        <td>
-                            <button onclick="editUser('${user.phone}')">Edit</button>
-                            <button onclick="removeUser('${user.phone}')">Remove</button>
-                        </td>
-                    </tr>`;
-                    tableBody.innerHTML += row;
+        function loadUsers() {
+            fetch('/api/getUsers', { headers: { 'x-admin-token': ADMIN_PASSWORD } })
+                .then(response => response.json())
+                .then(data => {
+                    let tableBody = document.getElementById("userTableBody");
+                    tableBody.innerHTML = "";
+                    data.forEach(user => {
+                        let row = `<tr>
+                            <td><input type='text' value='${user.name || "Unknown"}' id='name-${user.phone}'></td>
+                            <td><input type='text' value='${user.phone}' id='phone-${user.phone}'></td>
+                            <td>${user.referrals}</td>
+                            <td>${user.joinedChannel ? "Yes" : "No"}</td>
+                            <td>
+                                <button onclick="editUser('${user.phone}')">Edit</button>
+                                <button onclick="removeUser('${user.phone}')">Remove</button>
+                            </td>
+                        </tr>`;
+                        tableBody.innerHTML += row;
+                    });
                 });
-            });
-    }
+        }
 
-    function editUser(oldPhone) {
-        const newName = document.getElementById(`name-${oldPhone}`).value;
-        const newPhone = document.getElementById(`phone-${oldPhone}`).value;
-        fetch('/api/editUser', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
-            body: JSON.stringify({ oldPhone, newName, newPhone })
-        }).then(() => loadUsers());
-    }
+        function editUser(oldPhone) {
+            const newName = document.getElementById(`name-${oldPhone}`).value;
+            const newPhone = document.getElementById(`phone-${oldPhone}`).value;
+            fetch('/api/editUser', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
+                body: JSON.stringify({ oldPhone, newName, newPhone })
+            }).then(() => loadUsers());
+        }
 
-    function removeUser(phone) {
-        fetch('/api/removeUser', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
-            body: JSON.stringify({ phone })
-        }).then(() => loadUsers());
-    }
-</script>
+        function removeUser(phone) {
+            fetch('/api/removeUser', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
+                body: JSON.stringify({ phone })
+            }).then(() => loadUsers());
+        }
 
-</body>
-</html>
+        // Socket events for WhatsApp connection status and pairing code
+        const socket = io();
+        socket.on('whatsappStatus', (status) => {
+            document.getElementById('whatsappStatus').innerHTML = `WhatsApp Bot Status: ${status}`;
+        });
+        socket.on('pairingCode', (pairingCode) => {
+            document.getElementById
