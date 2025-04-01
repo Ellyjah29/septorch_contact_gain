@@ -52,6 +52,25 @@ function adminAuth(req, res, next) {
   next();
 }
 
+// Admin Login API Endpoint
+app.post('/api/adminLogin', async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    // Validate the password
+    if (password !== ADMIN_PASSWORD) {
+      return res.status(401).json({ error: 'Invalid password' });
+    }
+
+    // If password is correct, return success message and generate a token (optional)
+    const token = 'your-jwt-token-or-some-token-here'; // You can use JWT or a simple token
+    res.json({ message: 'Login successful', token });
+
+  } catch (error) {
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
 // Email Setup
 const transporter = nodemailer.createTransport({
   service: 'Gmail',
@@ -81,7 +100,7 @@ app.post('/api/register', async (req, res) => {
   try {
     const { name, phone, email } = req.body;
     if (!name || !phone || !email) return res.status(400).json({ error: 'All fields are required' });
-    
+
     let user = await Contact.findOne({ phone });
     if (!user) {
       user = new Contact({ name, phone, email });
@@ -148,7 +167,7 @@ async function startWhatsAppBot() {
       printQRInTerminal: false,
       getMessage: async () => ({ conversation: '' }),
     });
-    
+
     sock.ev.on('creds.update', saveCreds);
     sock.ev.on('connection.update', ({ connection, lastDisconnect }) => {
       if (connection === 'open') {
