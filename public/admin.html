@@ -1,163 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f8f9fa;
-      margin: 0;
-      padding: 0;
-      color: #333;
-      background-image: url('https://files.catbox.moe/mdeuf8.jpeg'); /* Retained your background image */
-      background-size: cover;
-      background-position: center;
-    }
-    header {
-      background-color: rgba(0, 123, 255, 0.8); /* Blue background with transparency */
-      color: white;
-      padding: 15px 0;
-      text-align: center;
-      font-size: 24px;
-      border-bottom: 2px solid #fff;
-    }
-    .container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      padding: 20px;
-      justify-content: center;
-    }
-    .card {
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      width: 300px;
-      padding: 20px;
-      text-align: center;
-      transition: transform 0.3s ease;
-    }
-    .card:hover {
-      transform: translateY(-5px);
-    }
-    .card h3 {
-      font-size: 18px;
-      margin-bottom: 15px;
-      color: #007bff;
-    }
-    .card p {
-      color: #555;
-      margin-bottom: 15px;
-    }
-    .card button {
-      background-color: #007bff;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background-color 0.3s ease;
-    }
-    .card button:hover {
-      background-color: #0056b3;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    .form-group input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 16px;
-    }
-    .form-group button {
-      width: 100%;
-      padding: 10px;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    .form-group button:hover {
-      background-color: #218838;
-    }
-    footer {
-      text-align: center;
-      padding: 10px;
-      background-color: #343a40;
-      color: white;
-      position: fixed;
-      width: 100%;
-      bottom: 0;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-
-  <header>
-    <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Septorch Logo" style="max-width: 100px; display: inline-block; vertical-align: middle;">
-    <span>Admin Panel - WhatsApp Contact Gain</span>
-  </header>
-
-  <div class="container">
-    <!-- Manage Users Card -->
-    <div class="card">
-      <h3>Manage Users</h3>
-      <p>View, edit, or remove users from the system.</p>
-      <button onclick="window.location.href='/api/getUsers'">View Users</button>
+    <div class="login-container" id="loginPage">
+        <h2>Admin Login</h2>
+        <input type="password" id="adminPassword" placeholder="Enter Password">
+        <button onclick="adminLogin()">Login</button>
+        <p id="loginMessage"></p>
     </div>
 
-    <!-- Add User Card -->
-    <div class="card">
-      <h3>Add User</h3>
-      <p>Register a new user to the system.</p>
-      <button onclick="window.location.href='/admin/addUser'">Add User</button>
+    <div class="admin-container" id="adminPage" style="display: none;">
+        <header>
+            <img src="logo.png" alt="Logo" class="logo">
+            <h1>Admin Panel</h1>
+            <button onclick="logout()">Logout</button>
+        </header>
+        <section>
+            <h2>WhatsApp Bot Status: <span id="waStatus">Checking...</span></h2>
+        </section>
+        <section>
+            <h2>Users</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="userTable"></tbody>
+            </table>
+        </section>
     </div>
 
-    <!-- Edit User Card -->
-    <div class="card">
-      <h3>Edit User</h3>
-      <p>Edit existing user's details.</p>
-      <button onclick="window.location.href='/admin/editUser'">Edit User</button>
-    </div>
+    <script>
+        function adminLogin() {
+            const password = document.getElementById("adminPassword").value;
+            $.post("/api/adminLogin", { password }, function(response) {
+                localStorage.setItem("adminToken", response.token);
+                showAdminPanel();
+            }).fail(function() {
+                document.getElementById("loginMessage").innerText = "Invalid Password";
+            });
+        }
 
-    <!-- Remove User Card -->
-    <div class="card">
-      <h3>Remove User</h3>
-      <p>Delete a user from the system.</p>
-      <button onclick="window.location.href='/admin/removeUser'">Remove User</button>
-    </div>
-  </div>
+        function showAdminPanel() {
+            document.getElementById("loginPage").style.display = "none";
+            document.getElementById("adminPage").style.display = "block";
+            fetchUsers();
+        }
 
-  <!-- Add User Form (Example) -->
-  <div class="form-container" style="padding: 20px;">
-    <h3>Add New User</h3>
-    <form id="addUserForm" action="/api/register" method="POST">
-      <div class="form-group">
-        <input type="text" name="name" placeholder="Enter name" required>
-      </div>
-      <div class="form-group">
-        <input type="text" name="phone" placeholder="Enter phone number" required>
-      </div>
-      <div class="form-group">
-        <input type="email" name="email" placeholder="Enter email" required>
-      </div>
-      <div class="form-group">
-        <button type="submit">Add User</button>
-      </div>
-    </form>
-  </div>
+        function fetchUsers() {
+            $.ajax({
+                url: "/api/getUsers",
+                headers: { "x-admin-token": localStorage.getItem("adminToken") },
+                success: function(users) {
+                    let rows = "";
+                    users.forEach(user => {
+                        rows += `<tr>
+                                    <td>${user.name}</td>
+                                    <td>${user.phone}</td>
+                                    <td>${user.email}</td>
+                                    <td>
+                                        <button onclick="removeUser('${user.phone}')">Remove</button>
+                                    </td>
+                                 </tr>`;
+                    });
+                    document.getElementById("userTable").innerHTML = rows;
+                }
+            });
+        }
 
-  <footer>
-    Powered by <a href="https://www.septorch.com" target="_blank" style="color: white; text-decoration: none;">Septorch</a> | All Rights Reserved
-  </footer>
+        function removeUser(phone) {
+            $.ajax({
+                url: "/api/removeUser",
+                type: "POST",
+                headers: { "x-admin-token": localStorage.getItem("adminToken") },
+                data: { phone },
+                success: fetchUsers
+            });
+        }
 
+        function logout() {
+            localStorage.removeItem("adminToken");
+            location.reload();
+        }
+    </script>
 </body>
 </html>
