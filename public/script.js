@@ -37,7 +37,7 @@ if (registerForm) {
             
             const data = await response.json();
             if (response.ok) {
-                referralLinkDisplay.innerHTML = `<p>Your referral link: <a href="${data.referralLink}" target="_blank">${data.referralLink}</a></p>`;
+                referralLinkDisplay.innerHTML = `<p style="color: green;">Successfully registered! Your referral link: <a href="${data.referralLink}" target="_blank">${data.referralLink}</a></p>`;
             } else {
                 alert("Error: " + data.message);
             }
