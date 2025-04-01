@@ -72,13 +72,22 @@ async function sendDailyReminder() {
 }
 setInterval(sendDailyReminder, 24 * 60 * 60 * 1000);
 
-// Admin Login Route
-app.post('/api/adminLogin', (req, res) => {
-  const { password } = req.body;
-  if (password === ADMIN_PASSWORD) {
-    res.json({ success: true });
-  } else {
-    res.status(403).json({ success: false, message: 'Invalid password' });
+// Registration Endpoint
+app.post('/api/register', async (req, res) => {
+  try {
+    const { name, phone, email } = req.body;
+    if (!name || !phone || !email) return res.status(400).json({ error: 'All fields are required' });
+    
+    let user = await Contact.findOne({ phone });
+    if (!user) {
+      user = new Contact({ name, phone, email });
+      await user.save();
+      const vcfEntry = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL:${phone}\nEMAIL:${email}\nEND:VCARD\n`;
+      fs.appendFileSync('contacts.vcf', vcfEntry);
+    }
+    res.json({ message: 'Registered successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to register user' });
   }
 });
 
@@ -106,6 +115,20 @@ app.post('/api/removeUser', adminAuth, async (req, res) => {
   }
 });
 
+app.post('/api/editUser', adminAuth, async (req, res) => {
+  try {
+    const { oldPhone, newName, newPhone } = req.body;
+    const user = await Contact.findOne({ phone: oldPhone });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.name = newName;
+    user.phone = newPhone;
+    await user.save();
+    res.json({ message: 'User updated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
 // WhatsApp Pair Code Authentication
 let whatsappSock;
 async function startWhatsAppBot() {
@@ -120,42 +143,31 @@ async function startWhatsAppBot() {
     });
     
     sock.ev.on('creds.update', saveCreds);
-    sock.ev.on('connection.update', ({ connection, lastDisconnect }) => {
-      if (connection === 'close') {
-        if (lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut) {
+    sock.ev.on('connection.update', ({ connection, lastDisconnect, pairingCode }) => {
+      if (connection === 'open') {
+        console.log('WhatsApp Bot Connected');
+        io.emit('whatsappStatus', 'connected');
+      } else if (connection === 'close') {
+        if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) {
           console.log('Reconnecting...');
+          io.emit('whatsappStatus', 'disconnected');
           startWhatsAppBot();
         } else {
-          console.log('Logged out. Restart required.');
+          console.log('WhatsApp logged out. Needs re-authentication.');
+          io.emit('whatsappStatus', 'loggedOut');
         }
       }
+      if (pairingCode) {
+        console.log(`Pairing Code: ${pairingCode}`);
+        io.emit('pairingCode', pairingCode);
+      }
     });
-    
-    whatsappSock = sock;
-    console.log('WhatsApp Bot Connected');
+    return sock;
   } catch (error) {
-    console.error('WhatsApp Bot Error:', error);
+    console.error('Error starting WhatsApp bot:', error);
   }
 }
-startWhatsAppBot();
+startWhatsAppBot().then(sock => whatsappSock = sock).catch(console.error);
 
-// Generate Pair Code
-app.get('/api/generatePairCode', adminAuth, async (req, res) => {
-  if (!whatsappSock) return res.status(500).json({ error: 'WhatsApp is not connected' });
-  try {
-    const pairCode = await whatsappSock.requestPairingCode(process.env.ADMIN_PHONE);
-    res.json({ pairCode });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to generate pair code' });
-  }
-});
-
-// Notify Admin of WhatsApp Logout
-io.on('connection', (socket) => {
-  console.log('Admin connected');
-  socket.on('requestStatus', () => {
-    socket.emit('whatsappStatus', whatsappSock ? 'connected' : 'disconnected');
-  });
-});
-
+// Start Server
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
