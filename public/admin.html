@@ -1,89 +1,72 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Login</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background: url('background.jpg') no-repeat center center fixed;
+            background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed;
             background-size: cover;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .login-container {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 2rem;
-            border-radius: 10px;
+            font-family: Arial, sans-serif;
+            color: white;
             text-align: center;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
-            width: 100%;
-            max-width: 350px;
         }
-        .logo {
-            width: 80px;
-            margin-bottom: 1rem;
+        .container, .login-container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 50px auto;
+            width: 80%;
+            max-width: 400px;
         }
-        h2 {
-            color: white;
-            margin-bottom: 1rem;
-        }
-        .input-group {
-            position: relative;
-            margin-bottom: 1rem;
-        }
-        .input-group input {
+        .hidden { display: none; }
+        input, button {
             width: 100%;
             padding: 10px;
-            padding-left: 40px;
+            margin: 10px 0;
             border: none;
             border-radius: 5px;
-            outline: none;
         }
-        .input-group i {
-            position: absolute;
-            left: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: gray;
-        }
-        .login-btn {
-            width: 100%;
-            padding: 10px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .login-btn:hover {
-            background: #0056b3;
-        }
-        .error {
-            color: red;
-            margin-top: 1rem;
-        }
+        button { background: #007bff; color: white; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .error-msg { color: red; }
+        .loading { font-style: italic; color: lightgray; }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <img src="logo.png" alt="Logo" class="logo">
+    <div id="loginSection" class="login-container">
         <h2>Admin Login</h2>
-        <div class="input-group">
-            <i class="fas fa-user"></i>
-            <input type="password" id="password" placeholder="Enter Password">
-        </div>
-        <button class="login-btn" onclick="adminLogin()">Login</button>
-        <p class="error" id="error-message"></p>
+        <input type="password" id="adminPassword" placeholder="Enter Admin Password">
+        <button onclick="checkLogin()">Login</button>
+        <p id="errorMsg" class="error-msg hidden">Invalid password</p>
     </div>
+    
+    <div id="adminPanel" class="container hidden">
+        <h1>Admin Panel</h1>
+        <button onclick="loadUsers()">Load Users</button>
+        <p id="loadingMsg" class="loading hidden">Loading users...</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Contact Name</th>
+                    <th>WhatsApp Number</th>
+                    <th>Referrals</th>
+                    <th>Joined Channel</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody"></tbody>
+        </table>
+    </div>
+
     <script>
-        function adminLogin() {
-            const password = document.getElementById('password').value;
+        let ADMIN_PASSWORD = "";
+
+        // Login function to authenticate admin
+        function checkLogin() {
+            const password = document.getElementById("adminPassword").value;
             fetch('/api/adminLogin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -91,16 +74,78 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.error) {
-                    document.getElementById('error-message').textContent = data.error;
+                if (data.message === 'Login successful') {
+                    ADMIN_PASSWORD = password;
+                    document.getElementById("loginSection").classList.add("hidden");
+                    document.getElementById("adminPanel").classList.remove("hidden");
                 } else {
-                    localStorage.setItem('adminToken', data.token);
-                    window.location.href = 'dashboard.html';
+                    document.getElementById("errorMsg").classList.remove("hidden");
                 }
-            })
-            .catch(() => {
-                document.getElementById('error-message').textContent = 'Login failed';
+            }).catch(error => {
+                console.error("Error during login:", error);
+                document.getElementById("errorMsg").innerText = "Error communicating with the server.";
+                document.getElementById("errorMsg").classList.remove("hidden");
             });
+        }
+
+        // Load all users into the table
+        function loadUsers() {
+            document.getElementById("loadingMsg").classList.remove("hidden");
+            fetch('/api/getUsers', { 
+                headers: { 'x-admin-token': ADMIN_PASSWORD } 
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("loadingMsg").classList.add("hidden");
+                let tableBody = document.getElementById("userTableBody");
+                tableBody.innerHTML = "";
+                data.forEach(user => {
+                    let row = `<tr>
+                        <td>${user.name || "Unknown"}</td>
+                        <td>${user.phone}</td>
+                        <td>${user.referrals || 0}</td>
+                        <td>${user.joinedChannel ? "Yes" : "No"}</td>
+                        <td>
+                            <button onclick="removeUser('${user.phone}')">Remove</button>
+                            <button onclick="editUser('${user.phone}')">Edit</button>
+                        </td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            })
+            .catch(error => {
+                document.getElementById("loadingMsg").classList.add("hidden");
+                alert("Failed to load users.");
+                console.error("Error loading users:", error);
+            });
+        }
+
+        // Remove user from database
+        function removeUser(phone) {
+            if (confirm(`Are you sure you want to remove the user with phone number ${phone}?`)) {
+                fetch('/api/removeUser', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
+                    body: JSON.stringify({ phone })
+                })
+                .then(() => loadUsers())
+                .catch(error => console.error("Error removing user:", error));
+            }
+        }
+
+        // Edit user details
+        function editUser(phone) {
+            const newName = prompt("Enter new name:");
+            const newPhone = prompt("Enter new phone number:");
+            if (newName && newPhone) {
+                fetch('/api/editUser', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_PASSWORD },
+                    body: JSON.stringify({ oldPhone: phone, newName, newPhone })
+                })
+                .then(() => loadUsers())
+                .catch(error => console.error("Error editing user:", error));
+            }
         }
     </script>
 </body>
