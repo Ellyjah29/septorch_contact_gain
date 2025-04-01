@@ -25,7 +25,7 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.error('MongoDB Error:', err));
 
-// Contacts Schema (Using existing contacts collection)
+// Contacts Schema
 const ContactSchema = new mongoose.Schema({
   name: String,
   phone: { type: String, unique: true },
@@ -73,7 +73,7 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// Get users from contacts collection
+// API Routes
 app.get('/api/getUsers', adminAuth, async (req, res) => {
   try {
     const users = await Contact.find();
@@ -83,7 +83,6 @@ app.get('/api/getUsers', adminAuth, async (req, res) => {
   }
 });
 
-// Remove user from contacts collection
 app.post('/api/removeUser', adminAuth, async (req, res) => {
   try {
     await Contact.deleteOne({ phone: req.body.phone });
@@ -93,7 +92,6 @@ app.post('/api/removeUser', adminAuth, async (req, res) => {
   }
 });
 
-// Edit user details
 app.post('/api/editUser', adminAuth, async (req, res) => {
   try {
     const { oldPhone, newName, newPhone } = req.body;
