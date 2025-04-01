@@ -8,6 +8,7 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const socketio = require('socket.io');
+const csvWriter = require('csv-writer').createObjectCsvWriter;
 
 const app = express();
 const server = http.createServer(app);
@@ -19,6 +20,7 @@ const limiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
 app.use(limiter);
 app.use(express.json());
 app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -39,17 +41,12 @@ const Contact = mongoose.model('Contact', ContactSchema, 'contacts');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';  // Default value for fallback
 function adminAuth(req, res, next) {
   const token = req.headers['x-admin-token'];
-  console.log("Admin Auth Attempt - Received Token:", token);  // Debugging log
-  console.log('Stored Password from .env:', ADMIN_PASSWORD); // Debugging log
   if (!token) {
-    console.log('Admin Auth Failed - Missing token');
     return res.status(401).json({ error: 'Missing authentication token' });
   }
   if (token !== ADMIN_PASSWORD) {
-    console.log('Admin Auth Failed - Invalid token');
     return res.status(403).json({ error: 'Invalid admin password' });
   }
-  console.log('Admin Auth Success');
   next();
 }
 
@@ -113,7 +110,6 @@ app.get('/api/getUsers', adminAuth, async (req, res) => {
 
 app.post('/api/removeUser', adminAuth, async (req, res) => {
   try {
-    console.log("Removing user:", req.body.phone);
     await Contact.deleteOne({ phone: req.body.phone });
     res.json({ message: 'User removed' });
   } catch (error) {
@@ -124,7 +120,6 @@ app.post('/api/removeUser', adminAuth, async (req, res) => {
 app.post('/api/editUser', adminAuth, async (req, res) => {
   try {
     const { oldPhone, newName, newPhone } = req.body;
-    console.log("Editing user:", oldPhone, newName, newPhone);
     const user = await Contact.findOne({ phone: oldPhone });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -139,57 +134,80 @@ app.post('/api/editUser', adminAuth, async (req, res) => {
 
 // Admin Login API
 app.post('/api/adminLogin', async (req, res) => {
-  try {
-    const { password } = req.body;
-    console.log('Received Password:', password); // Log received password from client
-    console.log('Stored Password from .env:', ADMIN_PASSWORD); // Log stored password from .env
-
-    if (password !== ADMIN_PASSWORD) {
-      return res.status(401).json({ error: 'Invalid password' });
-    }
-
-    // If password is correct
-    const token = 'your-jwt-token-or-some-token-here'; // Optional token
-    res.json({ message: 'Login successful', token });
-
-  } catch (error) {
-    res.status(500).json({ error: 'Login failed' });
+  const { password } = req.body;
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Invalid password' });
   }
+  res.json({ message: 'Login successful' });
+});
+
+// Upload Custom VCF File
+app.post('/api/uploadVCF', adminAuth, (req, res) => {
+  const vcfFile = req.files.vcfFile;
+  const uploadPath = path.join(__dirname, 'contacts.vcf');
+  vcfFile.mv(uploadPath, (err) => {
+    if (err) {
+      return res.status(500).send(err);
+    }
+    res.json({ message: 'VCF file uploaded successfully' });
+  });
+});
+
+// Export User Data as CSV
+app.get('/api/exportUsers', adminAuth, async (req, res) => {
+  try {
+    const users = await Contact.find();
+    const csvWriter = createObjectCsvWriter({
+      path: 'users.csv',
+      header: [
+        { id: 'name', title: 'Name' },
+        { id: 'phone', title: 'Phone' },
+        { id: 'email', title: 'Email' },
+        { id: 'joinedChannel', title: 'Joined Channel' },
+      ]
+    });
+
+    await csvWriter.writeRecords(users);
+    res.download('users.csv');
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to export users' });
+  }
+});
+
+// Schedule WhatsApp Announcement
+app.post('/api/scheduleAnnouncement', adminAuth, async (req, res) => {
+  const { message, dateTime } = req.body;
+  // Add logic to schedule WhatsApp announcement at specified dateTime
+  res.json({ message: 'Announcement scheduled successfully' });
 });
 
 // WhatsApp Pair Code Authentication
 let whatsappSock;
 async function startWhatsAppBot() {
-  try {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info');
-    const { version } = await fetchLatestBaileysVersion();
-    const sock = makeWASocket({
-      version,
-      auth: state,
-      printQRInTerminal: false,
-      getMessage: async () => ({ conversation: '' }),
-    });
+  const { state, saveCreds } = await useMultiFileAuthState('auth_info');
+  const { version } = await fetchLatestBaileysVersion();
+  const sock = makeWASocket({
+    version,
+    auth: state,
+    printQRInTerminal: false,
+    getMessage: async () => ({ conversation: '' }),
+  });
 
-    sock.ev.on('creds.update', saveCreds);
-    sock.ev.on('connection.update', ({ connection, lastDisconnect }) => {
-      if (connection === 'open') {
-        console.log('WhatsApp Bot Connected');
-        io.emit('whatsappStatus', 'connected');
-      } else if (connection === 'close') {
-        console.log('WhatsApp Disconnected, Restarting...');
-        io.emit('whatsappStatus', 'disconnected');
-        startWhatsAppBot();
-      }
-    });
+  sock.ev.on('creds.update', saveCreds);
+  sock.ev.on('connection.update', ({ connection, lastDisconnect }) => {
+    if (connection === 'open') {
+      console.log('WhatsApp Bot Connected');
+      io.emit('whatsappStatus', 'connected');
+    } else if (connection === 'close') {
+      console.log('WhatsApp Disconnected, Restarting...');
+      io.emit('whatsappStatus', 'disconnected');
+      startWhatsAppBot();
+    }
+  });
 
-    whatsappSock = sock;
-  } catch (error) {
-    console.error("Error in WhatsApp bot initialization:", error);
-    io.emit('whatsappStatus', 'error');
-  }
+  whatsappSock = sock;
 }
 
-// Start the WhatsApp Bot
 startWhatsAppBot();
 
 // WebSocket Connection
