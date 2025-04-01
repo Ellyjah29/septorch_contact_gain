@@ -39,8 +39,13 @@ const Contact = mongoose.model('Contact', ContactSchema, 'contacts');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 function adminAuth(req, res, next) {
   const token = req.headers['x-admin-token'];
-  if (token === ADMIN_PASSWORD) next();
-  else res.status(401).json({ error: 'Unauthorized' });
+  if (!token) {
+    return res.status(401).json({ error: 'Missing authentication token' });
+  }
+  if (token !== ADMIN_PASSWORD) {
+    return res.status(403).json({ error: 'Invalid admin password' });
+  }
+  next();
 }
 
 // Email Setup
