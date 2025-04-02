@@ -10,6 +10,7 @@ const http = require('http');
 const socketio = require('socket.io');
 const fileUpload = require('express-fileupload'); // Added for file uploads
 const { createObjectCsvWriter } = require('csv-writer');
+const QRCode = require('qrcode'); // Add this library for QR code generation
 
 const app = express();
 const server = http.createServer(app);
@@ -206,7 +207,14 @@ async function startWhatsAppBot() {
       startWhatsAppBot();
     } else if (qr) {
       console.log('QR Code received');
-      io.emit('qrCode', qr);  // Emit QR code to admin panel
+      // Convert the raw QR code string into a base64 image
+      QRCode.toDataURL(qr, (err, url) => {
+        if (err) {
+          console.error('Error generating QR code:', err);
+          return;
+        }
+        io.emit('whatsappQR', url); // Emit the QR code as a base64 image URL
+      });
     }
   });
 
