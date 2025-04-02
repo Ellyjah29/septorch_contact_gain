@@ -194,7 +194,7 @@ async function startWhatsAppBot() {
   });
 
   sock.ev.on('creds.update', saveCreds);
-  sock.ev.on('connection.update', ({ connection, lastDisconnect }) => {
+  sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
     if (connection === 'open') {
       console.log('WhatsApp Bot Connected');
       io.emit('whatsappStatus', 'connected');
@@ -202,6 +202,9 @@ async function startWhatsAppBot() {
       console.log('WhatsApp Disconnected, Restarting...');
       io.emit('whatsappStatus', 'disconnected');
       startWhatsAppBot();
+    } else if (qr) {
+      console.log('QR Code received');
+      io.emit('qrCode', qr);  // Emit QR code to admin panel
     }
   });
 
