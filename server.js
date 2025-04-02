@@ -221,6 +221,8 @@ async function startWhatsAppBot() {
     });
 
     sock.ev.on('creds.update', saveCreds);
+
+    // Handle connection updates
     sock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
@@ -234,6 +236,11 @@ async function startWhatsAppBot() {
         }
       } else if (connection === 'open') {
         logger.info('WhatsApp Bot Connected');
+
+        // Send a success message to the bot's own number
+        const botNumber = sock.user.id.split(':')[0]; // Extract the bot's phone number
+        await sock.sendMessage(botNumber, { text: 'WhatsApp bot has successfully connected!' });
+
         io.emit('whatsappStatus', 'connected');
       } else if (qr) {
         QRCode.toDataURL(qr, (err, url) => {
@@ -244,6 +251,24 @@ async function startWhatsAppBot() {
           io.emit('whatsappQR', url); // Emit the QR code as a base64 image URL
         });
       }
+    });
+
+    // Listen for chats being upserted (e.g., when the bot joins a channel)
+    sock.ev.on('chats.upsert', async (chats) => {
+      chats.forEach(chat => {
+        if (chat.isGroup || chat.isChannel) {
+          const channelName = chat.name; // Name of the channel
+          const channelJid = chat.id; // JID of the channel
+
+          // Log the channel details
+          logger.info(`Joined Channel: ${channelName}, JID: ${channelJid}`);
+
+          // Send the channel details to the bot's own number
+          const botNumber = sock.user.id.split(':')[0];
+          const message = `Successfully connected to channel:\nName: ${channelName}\nJID: ${channelJid}`;
+          await sock.sendMessage(botNumber, { text: message });
+        }
+      });
     });
 
     whatsappSock = sock;
