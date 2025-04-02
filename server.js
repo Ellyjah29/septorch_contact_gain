@@ -144,7 +144,7 @@ app.post('/api/adminLogin', async (req, res) => {
 // Upload Custom VCF File
 app.post('/api/uploadVCF', adminAuth, (req, res) => {
   const vcfFile = req.files.vcfFile;
-  const uploadPath = path.join(__dirname, 'contacts.vcf');
+  const uploadPath = path.join(__dirname, 'uploads', 'custom-vcf.vcf');
   vcfFile.mv(uploadPath, (err) => {
     if (err) {
       return res.status(500).send(err);
