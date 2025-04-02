@@ -8,27 +8,34 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const socketio = require('socket.io');
-const fileUpload = require('express-fileupload'); // Added for file uploads
+const fileUpload = require('express-fileupload');
 const { createObjectCsvWriter } = require('csv-writer');
-const QRCode = require('qrcode'); // Add this library for QR code generation
+const QRCode = require('qrcode'); // For QR code generation
+const Pino = require('pino'); // For better logging
 
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
 const PORT = process.env.PORT || 3000;
 
-// Rate limiting for security
+// Logger Setup
+const logger = Pino({
+  level: 'debug',
+  base: null,
+});
+
+// Rate Limiting for Security
 const limiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
 app.use(limiter);
 app.use(express.json());
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
-app.use(fileUpload()); // Middleware for file upload handling
+app.use(fileUpload()); // Middleware for file uploads
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.error('MongoDB Error:', err));
+  .then(() => logger.info('MongoDB Connected'))
+  .catch(err => logger.error('MongoDB Error:', err));
 
 // Contacts Schema
 const ContactSchema = new mongoose.Schema({
@@ -41,7 +48,7 @@ const ContactSchema = new mongoose.Schema({
 const Contact = mongoose.model('Contact', ContactSchema, 'contacts');
 
 // Admin Authentication Middleware
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';  // Default value for fallback
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 function adminAuth(req, res, next) {
   const token = req.headers['x-admin-token'];
   if (!token) {
@@ -72,7 +79,7 @@ async function sendDailyReminder() {
       });
     });
   } catch (error) {
-    console.error('Error sending daily reminders:', error);
+    logger.error('Error sending daily reminders:', error);
   }
 }
 setInterval(sendDailyReminder, 24 * 60 * 60 * 1000);
@@ -92,6 +99,7 @@ app.post('/api/register', async (req, res) => {
     }
     res.json({ message: 'Registered successfully' });
   } catch (error) {
+    logger.error('Registration Error:', error);
     res.status(500).json({ error: 'Failed to register user' });
   }
 });
@@ -107,6 +115,7 @@ app.get('/api/getUsers', adminAuth, async (req, res) => {
     const users = await Contact.find();
     res.json(users);
   } catch (error) {
+    logger.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
@@ -116,6 +125,7 @@ app.post('/api/removeUser', adminAuth, async (req, res) => {
     await Contact.deleteOne({ phone: req.body.phone });
     res.json({ message: 'User removed' });
   } catch (error) {
+    logger.error('Error removing user:', error);
     res.status(500).json({ error: 'Failed to remove user' });
   }
 });
@@ -131,6 +141,7 @@ app.post('/api/editUser', adminAuth, async (req, res) => {
     await user.save();
     res.json({ message: 'User updated successfully' });
   } catch (error) {
+    logger.error('Error updating user:', error);
     res.status(500).json({ error: 'Failed to update user' });
   }
 });
@@ -150,6 +161,7 @@ app.post('/api/uploadVCF', adminAuth, (req, res) => {
   const uploadPath = path.join(__dirname, 'uploads', 'custom-vcf.vcf');
   vcfFile.mv(uploadPath, (err) => {
     if (err) {
+      logger.error('Error uploading VCF file:', err);
       return res.status(500).send(err);
     }
     res.json({ message: 'VCF file uploaded successfully' });
@@ -173,6 +185,7 @@ app.get('/api/exportUsers', adminAuth, async (req, res) => {
     await csvWriter.writeRecords(users);
     res.download('users.csv');
   } catch (error) {
+    logger.error('Error exporting users:', error);
     res.status(500).json({ error: 'Failed to export users' });
   }
 });
@@ -184,54 +197,72 @@ app.post('/api/scheduleAnnouncement', adminAuth, async (req, res) => {
   res.json({ message: 'Announcement scheduled successfully' });
 });
 
+// Health Check Endpoint
+app.get('/health', (req, res) => {
+  if (whatsappSock && whatsappSock.authState) {
+    res.status(200).json({ status: 'Bot is running' });
+  } else {
+    res.status(500).json({ status: 'Bot is not connected' });
+  }
+});
+
 // WhatsApp Pair Code Authentication
 let whatsappSock;
 async function startWhatsAppBot() {
-  const { state, saveCreds } = await useMultiFileAuthState('auth_info');
-  const { version } = await fetchLatestBaileysVersion();
-  const sock = makeWASocket({
-    version,
-    auth: state,
-    printQRInTerminal: false,
-    getMessage: async () => ({ conversation: '' }),
-  });
+  try {
+    const { state, saveCreds } = await useMultiFileAuthState('auth_info', logger);
+    const { version } = await fetchLatestBaileysVersion();
+    const sock = makeWASocket({
+      version,
+      logger,
+      auth: state,
+      printQRInTerminal: false,
+      getMessage: async () => ({ conversation: '' }),
+    });
 
-  sock.ev.on('creds.update', saveCreds);
-  sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
-    if (connection === 'open') {
-      console.log('WhatsApp Bot Connected');
-      io.emit('whatsappStatus', 'connected');
-    } else if (connection === 'close') {
-      console.log('WhatsApp Disconnected, Restarting...');
-      io.emit('whatsappStatus', 'disconnected');
-      startWhatsAppBot();
-    } else if (qr) {
-      console.log('QR Code received');
-      // Convert the raw QR code string into a base64 image
-      QRCode.toDataURL(qr, (err, url) => {
-        if (err) {
-          console.error('Error generating QR code:', err);
-          return;
+    sock.ev.on('creds.update', saveCreds);
+    sock.ev.on('connection.update', async (update) => {
+      const { connection, lastDisconnect, qr } = update;
+
+      if (connection === 'close') {
+        const shouldReconnect = (lastDisconnect.error instanceof Boom) && lastDisconnect.error.output?.statusCode !== DisconnectReason.loggedOut;
+        if (shouldReconnect) {
+          logger.warn('Connection closed due to error, reconnecting...');
+          startWhatsAppBot();
+        } else {
+          logger.warn('Disconnected permanently.');
         }
-        io.emit('whatsappQR', url); // Emit the QR code as a base64 image URL
-      });
-    }
-  });
+      } else if (connection === 'open') {
+        logger.info('WhatsApp Bot Connected');
+        io.emit('whatsappStatus', 'connected');
+      } else if (qr) {
+        QRCode.toDataURL(qr, (err, url) => {
+          if (err) {
+            logger.error('Error generating QR code:', err);
+            return;
+          }
+          io.emit('whatsappQR', url); // Emit the QR code as a base64 image URL
+        });
+      }
+    });
 
-  whatsappSock = sock;
+    whatsappSock = sock;
+  } catch (error) {
+    logger.error('Error starting WhatsApp bot:', error);
+  }
 }
 
 startWhatsAppBot();
 
 // WebSocket Connection
 io.on('connection', socket => {
-  console.log('A user connected');
+  logger.info('A user connected');
   socket.on('disconnect', () => {
-    console.log('User disconnected');
+    logger.info('User disconnected');
   });
 });
 
 // Server Start
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`);
 });
