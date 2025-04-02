@@ -20,7 +20,7 @@
     "express-fileupload": "^1.2.1",
     "csv-writer": "^1.6.0",
     "qrcode": "^1.5.0",
-    "pino": "^8.15.0" // Added for better logging
+    "pino": "^8.15.0" 
   },
   "devDependencies": {
     "nodemon": "^3.0.0"
