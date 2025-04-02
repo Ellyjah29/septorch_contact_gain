@@ -19,7 +19,7 @@
     "socket.io": "^4.6.1",
     "express-fileupload": "^1.2.1",
     "csv-writer": "^1.6.0",
-    "qrcode": "^1.5.0" // Added qrcode library for QR code generation
+    "qrcode": "^1.5.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.0"
