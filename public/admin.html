@@ -1,143 +1,224 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        body {
-            background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed;
-            background-size: cover;
-            font-family: Arial, sans-serif;
-            color: white;
-            text-align: center;
-        }
-        .container, .login-container {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            margin: 50px auto;
-            width: 80%;
-            max-width: 600px;
-        }
-        .hidden { display: none; }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 5px;
-        }
-        button { background: #007bff; color: white; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .error-msg { color: red; }
-        .loading { font-style: italic; color: lightgray; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let whatsappStatus = document.getElementById('whatsappStatus');
+
+    socket.on('whatsappStatus', (status) => {
+      if (status === 'connected') {
+        whatsappStatus.textContent = 'WhatsApp Bot is connected';
+        whatsappStatus.style.color = 'green';
+      } else {
+        whatsappStatus.textContent = 'WhatsApp Bot is disconnected';
+        whatsappStatus.style.color = 'red';
+      }
+    });
+  </script>
 </head>
 <body>
-    <div id="loginSection" class="login-container">
-        <h2>Admin Login</h2>
-        <input type="password" id="adminPassword" placeholder="Enter Admin Password">
-        <button onclick="checkLogin()">Login</button>
-        <p id="errorMsg" class="error-msg hidden">Invalid password</p>
-    </div>
-    
-    <div id="adminPanel" class="container hidden">
-        <h1>Admin Panel</h1>
-        <button onclick="loadUsers()">Load Users</button>
-        <button onclick="uploadVCF()">Upload Custom VCF</button>
-        <button onclick="scheduleAnnouncement()">Schedule WhatsApp Announcement</button>
-        <button onclick="exportUsers()">Export User Data</button>
-        <button onclick="checkBotStatus()">Check WhatsApp Status</button>
-        <button onclick="generatePairCode()">Generate Pair Code</button>
-        
-        <p id="loadingMsg" class="loading hidden">Loading users...</p>
-        <table>
-            <thead>
-                <tr>
-                    <th>Contact Name</th>
-                    <th>WhatsApp Number</th>
-                    <th>Referrals</th>
-                    <th>Joined Channel</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="userTableBody"></tbody>
-        </table>
-    </div>
+  <header>
+    <h1>Admin Panel</h1>
+    <p>Manage Users and WhatsApp Bot</p>
+  </header>
 
-    <script>
-        let ADMIN_PASSWORD = "";
+  <main>
+    <!-- Admin Authentication -->
+    <section id="authSection">
+      <h2>Admin Login</h2>
+      <label for="adminPassword">Enter Admin Password:</label>
+      <input type="password" id="adminPassword" placeholder="Admin Password">
+      <button id="loginBtn">Login</button>
+      <p id="loginError" style="color: red; display: none;">Invalid password, please try again.</p>
+    </section>
 
-        function checkLogin() {
-            const password = document.getElementById("adminPassword").value;
-            fetch('/api/adminLogin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message === 'Login successful') {
-                    ADMIN_PASSWORD = password;
-                    document.getElementById("loginSection").classList.add("hidden");
-                    document.getElementById("adminPanel").classList.remove("hidden");
-                } else {
-                    document.getElementById("errorMsg").classList.remove("hidden");
-                }
-            });
+    <!-- Admin Dashboard (hidden by default) -->
+    <section id="adminDashboard" style="display: none;">
+      <h2>Dashboard</h2>
+
+      <!-- WhatsApp Status -->
+      <div id="whatsappStatus">WhatsApp Bot is disconnected</div>
+
+      <hr>
+
+      <!-- User Management -->
+      <h3>User Management</h3>
+      <button id="loadUsersBtn">Load All Users</button>
+      <table id="userTable" style="width: 100%; margin-top: 20px;">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Joined Channel</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody">
+          <!-- User rows will go here -->
+        </tbody>
+      </table>
+
+      <button id="exportCSVBtn">Export User Data as CSV</button>
+
+      <hr>
+
+      <!-- VCF File Upload -->
+      <h3>Upload Custom VCF</h3>
+      <form id="vcfForm" enctype="multipart/form-data">
+        <input type="file" id="vcfFile" name="vcfFile" accept=".vcf" required>
+        <button type="submit">Upload VCF</button>
+      </form>
+
+      <hr>
+
+      <!-- Announcements -->
+      <h3>Schedule WhatsApp Announcement</h3>
+      <form id="announcementForm">
+        <label for="announcementMessage">Message:</label>
+        <textarea id="announcementMessage" required></textarea>
+        <label for="announcementDate">Schedule Date/Time:</label>
+        <input type="datetime-local" id="announcementDate" required>
+        <button type="submit">Schedule Announcement</button>
+      </form>
+
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 SEPTORCH. Powered by <a href="https://www.tiktok.com/@septorch">Septorch</a></p>
+  </footer>
+
+  <script>
+    const loginBtn = document.getElementById('loginBtn');
+    const adminPassword = document.getElementById('adminPassword');
+    const loginError = document.getElementById('loginError');
+    const authSection = document.getElementById('authSection');
+    const adminDashboard = document.getElementById('adminDashboard');
+
+    loginBtn.addEventListener('click', () => {
+      const password = adminPassword.value;
+      fetch('/api/adminLogin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.message === 'Login successful') {
+          authSection.style.display = 'none';
+          adminDashboard.style.display = 'block';
+        } else {
+          loginError.style.display = 'block';
         }
+      })
+      .catch(error => {
+        loginError.style.display = 'block';
+      });
+    });
 
-        function loadUsers() {
-            fetch('/api/getUsers', { headers: { 'x-admin-token': ADMIN_PASSWORD } })
-            .then(response => response.json())
-            .then(data => {
-                let tableBody = document.getElementById("userTableBody");
-                tableBody.innerHTML = "";
-                data.forEach(user => {
-                    let row = `<tr>
-                        <td>${user.name || "Unknown"}</td>
-                        <td>${user.phone}</td>
-                        <td>${user.referrals || 0}</td>
-                        <td>${user.joinedChannel ? "Yes" : "No"}</td>
-                        <td>
-                            <button onclick="removeUser('${user.phone}')">Remove</button>
-                            <button onclick="editUser('${user.phone}')">Edit</button>
-                        </td>
-                    </tr>`;
-                    tableBody.innerHTML += row;
-                });
-            });
-        }
+    document.getElementById('loadUsersBtn').addEventListener('click', () => {
+      fetch('/api/getUsers', {
+        method: 'GET',
+        headers: { 'x-admin-token': adminPassword.value }
+      })
+      .then(res => res.json())
+      .then(users => {
+        const userTableBody = document.getElementById('userTableBody');
+        userTableBody.innerHTML = '';
+        users.forEach(user => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${user.name}</td>
+            <td>${user.phone}</td>
+            <td>${user.email}</td>
+            <td>${user.joinedChannel ? 'Yes' : 'No'}</td>
+            <td>
+              <button onclick="removeUser('${user.phone}')">Remove</button>
+            </td>
+          `;
+          userTableBody.appendChild(row);
+        });
+      });
+    });
 
-        function uploadVCF() {
-            alert("Feature to upload VCF will be implemented.");
-        }
+    function removeUser(phone) {
+      fetch('/api/removeUser', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': adminPassword.value
+        },
+        body: JSON.stringify({ phone })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
+        document.getElementById('loadUsersBtn').click();
+      });
+    }
 
-        function scheduleAnnouncement() {
-            alert("Feature to schedule announcements will be implemented.");
-        }
+    document.getElementById('exportCSVBtn').addEventListener('click', () => {
+      fetch('/api/exportUsers', {
+        method: 'GET',
+        headers: { 'x-admin-token': adminPassword.value }
+      })
+      .then(res => res.blob())
+      .then(blob => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'users.csv';
+        link.click();
+      });
+    });
 
-        function exportUsers() {
-            window.location.href = '/api/exportUsers';
-        }
+    document.getElementById('vcfForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append('vcfFile', document.getElementById('vcfFile').files[0]);
 
-        function checkBotStatus() {
-            fetch('/api/botStatus', { headers: { 'x-admin-token': ADMIN_PASSWORD } })
-            .then(response => response.json())
-            .then(data => {
-                alert(`Bot Status: ${data.status}`);
-            });
-        }
+      fetch('/api/uploadVCF', {
+        method: 'POST',
+        headers: { 'x-admin-token': adminPassword.value },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
+      })
+      .catch(error => {
+        alert('Error uploading VCF file');
+      });
+    });
 
-        function generatePairCode() {
-            fetch('/api/generatePairCode', { headers: { 'x-admin-token': ADMIN_PASSWORD } })
-            .then(response => response.json())
-            .then(data => {
-                alert(`Pair Code: ${data.pairCode}`);
-            });
-        }
-    </script>
+    document.getElementById('announcementForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const message = document.getElementById('announcementMessage').value;
+      const dateTime = document.getElementById('announcementDate').value;
+
+      fetch('/api/scheduleAnnouncement', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': adminPassword.value
+        },
+        body: JSON.stringify({ message, dateTime })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
+      })
+      .catch(error => {
+        alert('Error scheduling announcement');
+      });
+    });
+  </script>
 </body>
 </html>
