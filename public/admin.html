@@ -1,10 +1,130 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel</title>
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f8;
+      color: #333;
+    }
+
+    header {
+      background: #4CAF50;
+      color: white;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    header p {
+      margin: 5px 0 0;
+      font-size: 1rem;
+    }
+
+    main {
+      padding: 20px;
+    }
+
+    section {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      padding: 20px;
+    }
+
+    h2, h3 {
+      margin-top: 0;
+      color: #4CAF50;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+
+    input[type="password"], input[type="file"], textarea, input[type="datetime-local"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background: #f2f2f2;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #whatsappStatus {
+      font-weight: bold;
+    }
+
+    #qrCodeContainer img {
+      max-width: 200px;
+      margin-top: 10px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 10px 0;
+      background: #4CAF50;
+      color: white;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+
+    footer a {
+      color: #fff;
+      text-decoration: underline;
+    }
+  </style>
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
@@ -48,11 +168,11 @@
       <label for="adminPassword">Enter Admin Password:</label>
       <input type="password" id="adminPassword" placeholder="Admin Password">
       <button id="loginBtn">Login</button>
-      <p id="loginError" style="color: red; display: none;">Invalid password, please try again.</p>
+      <p id="loginError" class="hidden" style="color: red;">Invalid password, please try again.</p>
     </section>
 
     <!-- Admin Dashboard (hidden by default) -->
-    <section id="adminDashboard" style="display: none;">
+    <section id="adminDashboard" class="hidden">
       <h2>Dashboard</h2>
 
       <!-- WhatsApp Status -->
@@ -63,7 +183,7 @@
       <!-- QR Code Section -->
       <h3>WhatsApp Login QR Code</h3>
       <div id="qrCodeContainer">
-        <img id="qrCode" style="display:none;" alt="QR Code">
+        <img id="qrCode" class="hidden" alt="QR Code">
         <p id="qrStatus">Waiting for QR Code...</p>
       </div>
 
@@ -72,7 +192,7 @@
       <!-- User Management -->
       <h3>User Management</h3>
       <button id="loadUsersBtn">Load All Users</button>
-      <table id="userTable" style="width: 100%; margin-top: 20px;">
+      <table id="userTable">
         <thead>
           <tr>
             <th>Name</th>
@@ -135,14 +255,14 @@
       .then(res => res.json())
       .then(data => {
         if (data.message === 'Login successful') {
-          authSection.style.display = 'none';
-          adminDashboard.style.display = 'block';
+          authSection.classList.add('hidden');
+          adminDashboard.classList.remove('hidden');
         } else {
-          loginError.style.display = 'block';
+          loginError.classList.remove('hidden');
         }
       })
       .catch(error => {
-        loginError.style.display = 'block';
+        loginError.classList.remove('hidden');
       });
     });
 
@@ -244,3 +364,4 @@
   </script>
 </body>
 </html>
+```
