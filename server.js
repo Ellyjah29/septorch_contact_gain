@@ -8,7 +8,8 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const socketio = require('socket.io');
-const csvWriter = require('csv-writer').createObjectCsvWriter;
+const fileUpload = require('express-fileupload'); // Added for file uploads
+const { createObjectCsvWriter } = require('csv-writer');
 
 const app = express();
 const server = http.createServer(app);
@@ -21,6 +22,7 @@ app.use(limiter);
 app.use(express.json());
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
+app.use(fileUpload()); // Middleware for file upload handling
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
