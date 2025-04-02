@@ -255,7 +255,7 @@ async function startWhatsAppBot() {
 
     // Listen for chats being upserted (e.g., when the bot joins a channel)
     sock.ev.on('chats.upsert', async (chats) => {
-      chats.forEach(chat => {
+      for (const chat of chats) {
         if (chat.isGroup || chat.isChannel) {
           const channelName = chat.name; // Name of the channel
           const channelJid = chat.id; // JID of the channel
@@ -268,7 +268,7 @@ async function startWhatsAppBot() {
           const message = `Successfully connected to channel:\nName: ${channelName}\nJID: ${channelJid}`;
           await sock.sendMessage(botNumber, { text: message });
         }
-      });
+      }
     });
 
     whatsappSock = sock;
