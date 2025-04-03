@@ -12,6 +12,7 @@ const fileUpload = require('express-fileupload');
 const { createObjectCsvWriter } = require('csv-writer');
 const QRCode = require('qrcode'); // For QR code generation
 const Pino = require('pino'); // For better logging
+const cron = require('node-cron');
 
 const app = express();
 const server = http.createServer(app);
@@ -66,23 +67,56 @@ const transporter = nodemailer.createTransport({
   auth: { user: process.env.EMAIL, pass: process.env.EMAIL_PASS },
 });
 
-// Send Daily Email Reminders
-async function sendDailyReminder() {
+// Send Daily Email Reminders at 2:00 PM WAT
+cron.schedule('0 14 * * *', async () => {
   try {
     const users = await Contact.find({ joinedChannel: false, optedOut: false });
     users.forEach(user => {
       transporter.sendMail({
         from: process.env.EMAIL,
         to: user.email,
-        subject: 'Join Our WhatsApp Channel',
-        html: `<p>Hello ${user.name},<br>Join our WhatsApp channel: <a href="${process.env.WHATSAPP_CHANNEL}">Click here</a></p>`
+        subject: 'GET YOUR VCF FILE',
+        html: `<p>Hello ${user.name},<br> Thanks for joining us! Get your VCF file on our WhatsApp channel: <a href="${process.env.WHATSAPP_CHANNEL}">Click here</a></p>`
       });
     });
+    logger.info('Daily reminder emails sent successfully.');
   } catch (error) {
     logger.error('Error sending daily reminders:', error);
   }
+}, {
+  timezone: 'Africa/Lagos' // Use Nigeria's timezone (WAT)
+});
+
+// Function to send the .vcf file to the WhatsApp channel
+async function sendVCFtoWhatsAppChannel() {
+  try {
+    const channelJID = process.env.WHATSAPP_CHANNEL_JID; // WhatsApp channel JID from .env
+    if (!channelJID) {
+      logger.error('WhatsApp channel JID not set in .env');
+      return;
+    }
+
+    // Path to the .vcf file
+    const vcfFilePath = path.join(__dirname, 'contacts.vcf');
+
+    // Check if the .vcf file exists
+    if (!fs.existsSync(vcfFilePath)) {
+      logger.error('VCF file not found');
+      return;
+    }
+
+    // Send the .vcf file to the WhatsApp channel
+    await whatsappSock.sendMessage(channelJID, {
+      document: fs.readFileSync(vcfFilePath), // Read the file as binary
+      fileName: 'contacts.vcf', // Name of the file
+      mimetype: 'text/vcard', // MIME type for .vcf files
+    });
+
+    logger.info('VCF file sent to WhatsApp channel successfully.');
+  } catch (error) {
+    logger.error('Error sending VCF file to WhatsApp channel:', error);
+  }
 }
-setInterval(sendDailyReminder, 24 * 60 * 60 * 1000);
 
 // Registration Endpoint
 app.post('/api/register', async (req, res) => {
@@ -94,8 +128,13 @@ app.post('/api/register', async (req, res) => {
     if (!user) {
       user = new Contact({ name, phone, email });
       await user.save();
+
+      // Append the new contact to the .vcf file
       const vcfEntry = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL:${phone}\nEMAIL:${email}\nEND:VCARD\n`;
       fs.appendFileSync('contacts.vcf', vcfEntry);
+
+      // Send the updated .vcf file to the WhatsApp channel
+      await sendVCFtoWhatsAppChannel();
     }
     res.json({ message: 'Registered successfully' });
   } catch (error) {
@@ -250,24 +289,6 @@ async function startWhatsAppBot() {
           }
           io.emit('whatsappQR', url); // Emit the QR code as a base64 image URL
         });
-      }
-    });
-
-    // Listen for chats being upserted (e.g., when the bot joins a channel)
-    sock.ev.on('chats.upsert', async (chats) => {
-      for (const chat of chats) {
-        if (chat.isGroup || chat.isChannel) {
-          const channelName = chat.name; // Name of the channel
-          const channelJid = chat.id; // JID of the channel
-
-          // Log the channel details
-          logger.info(`Joined Channel: ${channelName}, JID: ${channelJid}`);
-
-          // Send the channel details to the bot's own number
-          const botNumber = sock.user.id.split(':')[0];
-          const message = `Successfully connected to channel:\nName: ${channelName}\nJID: ${channelJid}`;
-          await sock.sendMessage(botNumber, { text: message });
-        }
       }
     });
 
