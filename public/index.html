@@ -14,7 +14,7 @@
 
         body {
             font-family: Arial, sans-serif;
-            background: url('/images/background.jpg') no-repeat center center fixed;
+            background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed; /* Updated background image */
             background-size: cover;
             color: #333;
         }
@@ -23,7 +23,7 @@
             max-width: 500px;
             margin: 50px auto;
             padding: 20px;
-            background: rgba(255, 255, 255, 0.7); /* Reduced opacity */
+            background: rgba(255, 255, 255, 0.9); /* Increased opacity for better readability */
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             text-align: center;
@@ -79,6 +79,12 @@
             color: red;
         }
 
+        #confirmationMessage {
+            margin-top: 10px;
+            font-size: 1rem;
+            color: green;
+        }
+
         #referralLinkDisplay a {
             color: #4CAF50;
             text-decoration: underline;
@@ -102,16 +108,17 @@
 </head>
 <body>
     <div class="container">
-        <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo" class="logo">
+        <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo" class="logo"> <!-- Updated logo -->
         <h1>Join & Grow Your WhatsApp Contacts</h1>
         <p>Enter your details to get started:</p>
         <form id="registerForm">
-            <input type="text" id="name" placeholder="Your Name" required>
-            <input type="email" id="email" placeholder="Email Address" required>
-            <input type="text" id="whatsappNumber" placeholder="WhatsApp Number (with country code)" required>
-            <button type="submit">Join Now</button>
+            <input type="text" id="name" placeholder="Your Name" required aria-label="Your Name">
+            <input type="email" id="email" placeholder="Email Address" required aria-label="Email Address">
+            <input type="text" id="whatsappNumber" placeholder="WhatsApp Number (with country code)" required aria-label="WhatsApp Number">
+            <button type="submit" aria-label="Join Now Button">Join Now</button>
         </form>
         <p id="message"></p>
+        <div id="confirmationMessage"></div>
         <div id="referralLinkDisplay"></div>
     </div>
     <footer>
@@ -125,9 +132,11 @@
             const email = document.getElementById('email').value.trim();
             const whatsappNumber = document.getElementById('whatsappNumber').value.trim();
             const messageElement = document.getElementById('message');
+            const confirmationMessageElement = document.getElementById('confirmationMessage');
 
             // Clear previous messages
             messageElement.innerText = "";
+            confirmationMessageElement.innerText = "";
 
             // Validate phone number: Must include a country code (starts with + or has at least 10 digits)
             const phoneRegex = /^\+?[1-9]\d{9,}$/; // Matches numbers starting with + or digits >= 10
@@ -140,15 +149,18 @@
                 const response = await fetch('/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, phone: whatsappNumber, email })
+                    body: JSON.stringify({ name, email, phone: whatsappNumber })
                 });
 
                 const data = await response.json();
                 if (response.ok) {
-                    messageElement.innerText = data.message || "Registered successfully!";
+                    confirmationMessageElement.innerHTML = `
+                        <p>Thank you for joining! Your VCF file will be sent to our WhatsApp channel and your email shortly.</p>
+                        <p><strong>Note:</strong> The email system is temporary and may not be available indefinitely.</p>
+                    `;
                     document.getElementById('referralLinkDisplay').innerHTML = `
-                        <p>Thank you for joining! Please join our WhatsApp channel:</p>
-                        <a href="https://whatsapp.com/channel/0029Vb1ydGk8qIzkvps0nZ04" target="_blank">
+                        <p>Please join our WhatsApp channel:</p>
+                        <a href="https://whatsapp.com/channel/0029Vb1ydGk8qIzkvps0nZ04" target="_blank" aria-label="WhatsApp Channel Link">
                             https://whatsapp.com/channel/0029Vb1ydGk8qIzkvps0nZ04
                         </a>
                     `;
