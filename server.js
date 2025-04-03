@@ -28,7 +28,7 @@ const logger = Pino({
 const limiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
 app.use(limiter);
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public')); // Serve static files from the "public" folder
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload()); // Middleware for file uploads
 
