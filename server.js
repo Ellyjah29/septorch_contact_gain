@@ -13,6 +13,7 @@ const { createObjectCsvWriter } = require('csv-writer');
 const QRCode = require('qrcode'); // For QR code generation
 const Pino = require('pino'); // For better logging
 const cron = require('node-cron');
+
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
@@ -22,10 +23,6 @@ const PORT = process.env.PORT || 3000;
 const logger = Pino({
   level: 'debug',
   base: null,
-  transport: {
-    target: 'pino/file',
-    options: { destination: path.join(__dirname, 'logs', 'app.log') }, // Log to a file
-  },
 });
 
 // Rate Limiting for Security
@@ -98,19 +95,23 @@ async function sendVCFtoWhatsAppChannel() {
       logger.error('WhatsApp channel JID not set in .env');
       return;
     }
+
     // Path to the .vcf file
     const vcfFilePath = path.join(__dirname, 'contacts.vcf');
+
     // Check if the .vcf file exists
     if (!fs.existsSync(vcfFilePath)) {
       logger.error('VCF file not found');
       return;
     }
+
     // Send the .vcf file to the WhatsApp channel
     await whatsappSock.sendMessage(channelJID, {
       document: fs.readFileSync(vcfFilePath), // Read the file as binary
       fileName: 'contacts.vcf', // Name of the file
       mimetype: 'text/vcard', // MIME type for .vcf files
     });
+
     logger.info('VCF file sent to WhatsApp channel successfully.');
   } catch (error) {
     logger.error('Error sending VCF file to WhatsApp channel:', error);
@@ -122,19 +123,16 @@ app.post('/api/register', async (req, res) => {
   try {
     const { name, phone, email } = req.body;
     if (!name || !phone || !email) return res.status(400).json({ error: 'All fields are required' });
+
     let user = await Contact.findOne({ phone });
     if (!user) {
       user = new Contact({ name, phone, email });
       await user.save();
+
       // Append the new contact to the .vcf file
-      const vcfEntry = `BEGIN:VCARD
-VERSION:3.0
-FN:${name}
-TEL:${phone}
-EMAIL:${email}
-END:VCARD
-`;
+      const vcfEntry = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL:${phone}\nEMAIL:${email}\nEND:VCARD\n`;
       fs.appendFileSync('contacts.vcf', vcfEntry);
+
       // Send the updated .vcf file to the WhatsApp channel
       await sendVCFtoWhatsAppChannel();
     }
@@ -176,6 +174,7 @@ app.post('/api/editUser', adminAuth, async (req, res) => {
     const { oldPhone, newName, newPhone } = req.body;
     const user = await Contact.findOne({ phone: oldPhone });
     if (!user) return res.status(404).json({ error: 'User not found' });
+
     user.name = newName;
     user.phone = newPhone;
     await user.save();
@@ -221,6 +220,7 @@ app.get('/api/exportUsers', adminAuth, async (req, res) => {
         { id: 'joinedChannel', title: 'Joined Channel' },
       ]
     });
+
     await csvWriter.writeRecords(users);
     res.download('users.csv');
   } catch (error) {
@@ -245,33 +245,6 @@ app.get('/health', (req, res) => {
   }
 });
 
-// Logging Endpoint
-app.get('/api/getLogs', adminAuth, (req, res) => {
-  const logFilePath = path.join(__dirname, 'logs', 'app.log');
-  if (!fs.existsSync(logFilePath)) {
-    return res.status(404).json({ error: 'Log file not found' });
-  }
-  const logs = fs.readFileSync(logFilePath, 'utf-8');
-  res.json({ logs });
-});
-
-// Generate Link with Phone Number
-app.post('/api/generateLink', adminAuth, async (req, res) => {
-  try {
-    const { phone } = req.body;
-    if (!phone) return res.status(400).json({ error: 'Phone number is required' });
-
-    const user = await Contact.findOne({ phone });
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    const link = `${process.env.WHATSAPP_CHANNEL}?text=Hi%20${encodeURIComponent(user.name)},%20welcome%20to%20our%20channel!`;
-    res.json({ link });
-  } catch (error) {
-    logger.error('Error generating link:', error);
-    res.status(500).json({ error: 'Failed to generate link' });
-  }
-});
-
 // WhatsApp Pair Code Authentication
 let whatsappSock;
 async function startWhatsAppBot() {
@@ -285,12 +258,15 @@ async function startWhatsAppBot() {
       printQRInTerminal: false,
       getMessage: async () => ({ conversation: '' }),
     });
+
     sock.ev.on('creds.update', saveCreds);
+
     // Handle connection updates
     sock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
+
       if (connection === 'close') {
-        const shouldReconnect = (lastDisconnect.error instanceof DisconnectReason) && lastDisconnect.error.output?.statusCode !== DisconnectReason.loggedOut;
+        const shouldReconnect = (lastDisconnect.error instanceof Boom) && lastDisconnect.error.output?.statusCode !== DisconnectReason.loggedOut;
         if (shouldReconnect) {
           logger.warn('Connection closed due to error, reconnecting...');
           startWhatsAppBot();
@@ -299,9 +275,11 @@ async function startWhatsAppBot() {
         }
       } else if (connection === 'open') {
         logger.info('WhatsApp Bot Connected');
+
         // Send a success message to the bot's own number
         const botNumber = sock.user.id.split(':')[0]; // Extract the bot's phone number
         await sock.sendMessage(botNumber, { text: 'WhatsApp bot has successfully connected!' });
+
         io.emit('whatsappStatus', 'connected');
       } else if (qr) {
         QRCode.toDataURL(qr, (err, url) => {
@@ -313,6 +291,7 @@ async function startWhatsAppBot() {
         });
       }
     });
+
     whatsappSock = sock;
   } catch (error) {
     logger.error('Error starting WhatsApp bot:', error);
