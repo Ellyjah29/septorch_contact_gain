@@ -4,36 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsApp Contact Gain</title>
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* General Styles */
-        html, body {
-            height: 100%;
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
             font-family: 'Poppins', Arial, sans-serif;
-            color: #333;
+            color: #fff;
+            line-height: 1.6;
+            overflow-x: hidden;
         }
 
         body {
             background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed;
             background-size: cover;
-            color: #fff; /* Adjust text color for better contrast */
+            position: relative;
+        }
+
+        /* Gradient Overlay */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8));
+            z-index: -1;
         }
 
         .container {
             max-width: 500px;
             margin: 50px auto;
-            padding: 30px;
+            padding: 40px 30px;
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 12px;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
             text-align: center;
+            animation: fadeIn 1s ease-in-out;
         }
 
         .logo {
             width: 120px;
             margin-bottom: 20px;
-            border-radius: 8px;
+            border-radius: 10px;
+            animation: float 3s ease-in-out infinite;
         }
 
         h1 {
@@ -46,6 +68,12 @@
         p {
             font-size: 1rem;
             margin: 5px 0;
+            color: #333; /* Default text color for paragraphs */
+        }
+
+        /* Specific Styling for "Enter your details" text */
+        .details-text {
+            color: #000; /* Black text */
         }
 
         form {
@@ -55,18 +83,19 @@
         input[type="text"],
         input[type="email"] {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             margin: 10px 0;
             border: 2px solid #ddd;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 1rem;
+            font-family: 'Poppins', Arial, sans-serif;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         input[type="text"]:focus,
         input[type="email"]:focus {
             border-color: #4CAF50;
-            box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
             outline: none;
         }
 
@@ -74,12 +103,12 @@
             background: linear-gradient(135deg, #4CAF50, #45a049);
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
+            padding: 14px 25px;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 1rem;
             font-weight: 500;
-            transition: background 0.3s ease, transform 0.3s ease;
+            transition: transform 0.3s ease, background 0.3s ease;
         }
 
         button:hover {
@@ -105,17 +134,16 @@
 
         #referralLinkDisplay button {
             display: inline-block;
-            margin-top: 15px;
-            text-decoration: none;
+            margin-top: 20px;
             background: linear-gradient(135deg, #007bff, #0056b3);
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
+            padding: 14px 25px;
+            border-radius: 10px;
             font-size: 1rem;
             font-weight: 500;
             cursor: pointer;
-            transition: background 0.3s ease, transform 0.3s ease;
+            transition: transform 0.3s ease, background 0.3s ease;
         }
 
         #referralLinkDisplay button:hover {
@@ -135,10 +163,6 @@
             position: fixed;
             bottom: 0;
             width: 100%;
-        }
-
-        footer p {
-            margin: 0;
             font-size: 0.9rem;
         }
 
@@ -148,15 +172,27 @@
             border: 4px solid #f3f3f3;
             border-top: 4px solid #4CAF50;
             border-radius: 50%;
-            width: 25px;
-            height: 25px;
+            width: 30px;
+            height: 30px;
             animation: spin 1s linear infinite;
-            margin: 10px auto;
+            margin: 15px auto;
         }
 
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        /* Fade-In Animation */
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Floating Animation for Logo */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
     </style>
 </head>
@@ -164,7 +200,7 @@
     <div class="container">
         <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo" class="logo">
         <h1>Join & Grow Your WhatsApp Contacts</h1>
-        <p>Enter your details to get started:</p>
+        <p class="details-text">Enter your details to get started:</p>
         <form id="registerForm" aria-live="polite">
             <input type="text" id="name" placeholder="Your Name" required aria-label="Your Name">
             <input type="email" id="email" placeholder="Email Address" required aria-label="Email Address">
