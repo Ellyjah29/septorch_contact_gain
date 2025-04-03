@@ -9,7 +9,7 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background: url('/images/background.jpg') no-repeat center center fixed;
+      background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed; /* Updated background image */
       background-size: cover;
       color: #333;
     }
@@ -130,39 +130,10 @@
       text-decoration: underline;
     }
   </style>
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    let whatsappStatus = document.getElementById('whatsappStatus');
-
-    socket.on('whatsappStatus', (status) => {
-      if (status === 'connected') {
-        whatsappStatus.textContent = 'WhatsApp Bot is connected';
-        whatsappStatus.style.color = 'green';
-      } else {
-        whatsappStatus.textContent = 'WhatsApp Bot is disconnected';
-        whatsappStatus.style.color = 'red';
-      }
-    });
-
-    socket.on('whatsappQR', (qrCodeData) => {
-      const qrCodeElement = document.getElementById('qrCode');
-      const qrStatus = document.getElementById('qrStatus');
-      
-      if (qrCodeData) {
-        qrCodeElement.src = qrCodeData;  // Assuming qrCodeData is a base64 string or image URL
-        qrCodeElement.style.display = 'block';
-        qrStatus.textContent = 'Scan the QR code with WhatsApp.';
-      } else {
-        qrCodeElement.style.display = 'none';
-        qrStatus.textContent = 'QR Code not available.';
-      }
-    });
-  </script>
 </head>
 <body>
   <header>
-    <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo">
+    <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo"> <!-- Updated logo image -->
     <h1>Admin Panel</h1>
     <p>Manage Users and WhatsApp Bot</p>
   </header>
@@ -172,8 +143,8 @@
     <section id="authSection">
       <h2>Admin Login</h2>
       <label for="adminPassword">Enter Admin Password:</label>
-      <input type="password" id="adminPassword" placeholder="Admin Password">
-      <button id="loginBtn">Login</button>
+      <input type="password" id="adminPassword" placeholder="Admin Password" aria-label="Admin Password">
+      <button id="loginBtn" aria-label="Login Button">Login</button>
       <p id="loginError" class="hidden" style="color: red;">Invalid password, please try again.</p>
     </section>
 
@@ -197,7 +168,7 @@
 
       <!-- User Management -->
       <h3>User Management</h3>
-      <button id="loadUsersBtn">Load All Users</button>
+      <button id="loadUsersBtn" aria-label="Load Users Button">Load All Users</button>
       <table id="userTable">
         <thead>
           <tr>
@@ -212,16 +183,16 @@
           <!-- User rows will go here -->
         </tbody>
       </table>
-
-      <button id="exportCSVBtn">Export User Data as CSV</button>
+      <button id="exportCSVBtn" aria-label="Export CSV Button">Export User Data as CSV</button>
 
       <hr>
 
       <!-- VCF File Upload -->
       <h3>Upload Custom VCF</h3>
       <form id="vcfForm" enctype="multipart/form-data">
-        <input type="file" id="vcfFile" name="vcfFile" accept=".vcf" required>
-        <button type="submit">Upload VCF</button>
+        <input type="file" id="vcfFile" name="vcfFile" accept=".vcf" required aria-label="VCF File Input">
+        <button type="submit" aria-label="Upload VCF Button">Upload VCF</button>
+        <button type="reset" aria-label="Reset VCF Form">Reset</button>
       </form>
 
       <hr>
@@ -230,10 +201,11 @@
       <h3>Schedule WhatsApp Announcement</h3>
       <form id="announcementForm">
         <label for="announcementMessage">Message:</label>
-        <textarea id="announcementMessage" required></textarea>
+        <textarea id="announcementMessage" required aria-label="Announcement Message"></textarea>
         <label for="announcementDate">Schedule Date/Time:</label>
-        <input type="datetime-local" id="announcementDate" required>
-        <button type="submit">Schedule Announcement</button>
+        <input type="datetime-local" id="announcementDate" required aria-label="Announcement Date and Time">
+        <button type="submit" aria-label="Schedule Announcement Button">Schedule Announcement</button>
+        <button type="reset" aria-label="Reset Announcement Form">Reset</button>
       </form>
     </section>
   </main>
@@ -242,20 +214,45 @@
     <p>&copy; 2025 SEPTORCH. Powered by <a href="https://www.tiktok.com/@septorch">Septorch</a></p>
   </footer>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script>
+    const socket = io();
     const loginBtn = document.getElementById('loginBtn');
     const adminPassword = document.getElementById('adminPassword');
     const loginError = document.getElementById('loginError');
     const authSection = document.getElementById('authSection');
     const adminDashboard = document.getElementById('adminDashboard');
 
+    // Handle WhatsApp bot status updates
+    socket.on('whatsappStatus', (status) => {
+      const whatsappStatus = document.getElementById('whatsappStatus');
+      whatsappStatus.textContent = status === 'connected' 
+        ? 'WhatsApp Bot is connected' 
+        : 'WhatsApp Bot is disconnected';
+      whatsappStatus.style.color = status === 'connected' ? 'green' : 'red';
+    });
+
+    // Handle QR Code updates
+    socket.on('whatsappQR', (qrCodeData) => {
+      const qrCodeElement = document.getElementById('qrCode');
+      const qrStatus = document.getElementById('qrStatus');
+      
+      if (qrCodeData) {
+        qrCodeElement.src = qrCodeData;
+        qrCodeElement.classList.remove('hidden');
+        qrStatus.textContent = 'Scan the QR code with WhatsApp.';
+      } else {
+        qrCodeElement.classList.add('hidden');
+        qrStatus.textContent = 'QR Code not available.';
+      }
+    });
+
+    // Admin Login
     loginBtn.addEventListener('click', () => {
       const password = adminPassword.value;
       fetch('/api/adminLogin', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password })
       })
       .then(res => res.json())
@@ -267,11 +264,10 @@
           loginError.classList.remove('hidden');
         }
       })
-      .catch(error => {
-        loginError.classList.remove('hidden');
-      });
+      .catch(() => loginError.classList.remove('hidden'));
     });
 
+    // Load Users
     document.getElementById('loadUsersBtn').addEventListener('click', () => {
       fetch('/api/getUsers', {
         method: 'GET',
@@ -288,21 +284,21 @@
             <td>${user.phone}</td>
             <td>${user.email}</td>
             <td>${user.joinedChannel ? 'Yes' : 'No'}</td>
-            <td>
-              <button onclick="removeUser('${user.phone}')">Remove</button>
-            </td>
+            <td><button onclick="removeUser('${user.phone}')" title="Remove User">Remove</button></td>
           `;
           userTableBody.appendChild(row);
         });
-      });
+      })
+      .catch(() => alert('Error loading users.'));
     });
 
-    function removeUser(phone) {
+    // Remove User
+    window.removeUser = (phone) => {
       fetch('/api/removeUser', {
         method: 'POST',
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
-          'x-admin-token': adminPassword.value
+          'x-admin-token': adminPassword.value 
         },
         body: JSON.stringify({ phone })
       })
@@ -310,9 +306,11 @@
       .then(data => {
         alert(data.message);
         document.getElementById('loadUsersBtn').click();
-      });
-    }
+      })
+      .catch(() => alert('Error removing user.'));
+    };
 
+    // Export CSV
     document.getElementById('exportCSVBtn').addEventListener('click', () => {
       fetch('/api/exportUsers', {
         method: 'GET',
@@ -324,9 +322,11 @@
         link.href = URL.createObjectURL(blob);
         link.download = 'users.csv';
         link.click();
-      });
+      })
+      .catch(() => alert('Error exporting CSV.'));
     });
 
+    // Upload VCF
     document.getElementById('vcfForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const formData = new FormData();
@@ -338,14 +338,11 @@
         body: formData
       })
       .then(res => res.json())
-      .then(data => {
-        alert(data.message);
-      })
-      .catch(error => {
-        alert('Error uploading VCF file');
-      });
+      .then(data => alert(data.message))
+      .catch(() => alert('Error uploading VCF file.'));
     });
 
+    // Schedule Announcement
     document.getElementById('announcementForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const message = document.getElementById('announcementMessage').value;
@@ -353,19 +350,15 @@
 
       fetch('/api/scheduleAnnouncement', {
         method: 'POST',
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
-          'x-admin-token': adminPassword.value
+          'x-admin-token': adminPassword.value 
         },
         body: JSON.stringify({ message, dateTime })
       })
       .then(res => res.json())
-      .then(data => {
-        alert(data.message);
-      })
-      .catch(error => {
-        alert('Error scheduling announcement');
-      });
+      .then(data => alert(data.message))
+      .catch(() => alert('Error scheduling announcement.'));
     });
   </script>
 </body>
