@@ -1,7 +1,7 @@
 {
   "name": "whatsapp-contact-gain-system",
   "version": "1.0.0",
-  "description": "A WhatsApp Contact Gain system with referral tracking, automated reminders, VCF file customization, and admin features.",
+  "description": "A WhatsApp Contact Gain System with automated email reminders (scheduled at 2 PM WAT), VCF file generation and sharing to WhatsApp channels, referral tracking, admin features, and secure user management.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -14,13 +14,12 @@
     "dotenv": "^16.0.3",
     "@whiskeysockets/baileys": "^6.3.0",
     "express-rate-limit": "^6.7.0",
-    "csv-stringify": "^6.2.0",
-    "node-schedule": "^2.1.0",
-    "socket.io": "^4.6.1",
-    "express-fileupload": "^1.2.1",
     "csv-writer": "^1.6.0",
     "qrcode": "^1.5.0",
-    "pino": "^8.15.0" 
+    "pino": "^8.15.0",
+    "node-cron": "^3.0.2", // Added for scheduling tasks (e.g., daily emails)
+    "socket.io": "^4.6.1",
+    "express-fileupload": "^1.2.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.0"
