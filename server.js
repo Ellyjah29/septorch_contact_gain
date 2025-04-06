@@ -45,11 +45,11 @@ const ContactSchema = new mongoose.Schema({
   email: String,
   joinedChannel: { type: Boolean, default: false },
   optedOut: { type: Boolean, default: false },
-  invalidEmail: { type: Boolean, default: false } // Track invalid emails
+  invalidEmail: { type: Boolean, default: false }
 });
 const Contact = mongoose.model('Contact', ContactSchema, 'contacts');
 
-// Email Transporter
+// Email Transporter (Replace with Amazon SES for >500 emails/day)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -91,7 +91,7 @@ async function sendEmailsInBatches(emails, batchSize = 100) {
 
       const info = await transporter.sendMail(mailOptions);
       
-      // Handle invalid emails
+      // Automatically remove invalid emails
       if (info.rejected && info.rejected.length > 0) {
         await Contact.updateMany(
           { email: { $in: info.rejected } },
@@ -109,8 +109,8 @@ async function sendEmailsInBatches(emails, batchSize = 100) {
   }
 }
 
-// Daily VCF Email at 12:00 AM Nigerian Time
-cron.schedule('0 0 * * *', async () => {
+// Daily VCF Email at 1:00 AM Nigerian Time
+cron.schedule('0 0 1 * * *', async () => { // Changed to 1:00 AM WAT
   try {
     logger.info('Starting daily VCF process...');
     
@@ -119,7 +119,6 @@ cron.schedule('0 0 * * *', async () => {
 
     // Get valid users
     const users = await Contact.find({
-      joinedChannel: false,
       optedOut: false,
       invalidEmail: false
     });
@@ -181,17 +180,6 @@ async function startWhatsAppBot() {
   }
 }
 startWhatsAppBot();
-
-// Send VCF to WhatsApp Channel Endpoint
-app.post('/api/sendVCFToWhatsApp', adminAuth, async (req, res) => {
-  try {
-    await sendVCFtoWhatsAppChannel();
-    res.json({ message: 'VCF sent to WhatsApp channel successfully' });
-  } catch (error) {
-    logger.error('Error sending VCF to WhatsApp:', error);
-    res.status(500).json({ error: 'Failed to send VCF to WhatsApp' });
-  }
-});
 
 // Send VCF to WhatsApp Channel Function
 async function sendVCFtoWhatsAppChannel() {
@@ -280,6 +268,33 @@ app.get('/api/exportUsers', adminAuth, async (req, res) => {
   } catch (error) {
     logger.error('Export Error:', error);
     res.status(500).json({ error: 'Export failed' });
+  }
+});
+
+// Schedule WhatsApp Announcement Endpoint
+app.post('/api/scheduleAnnouncement', adminAuth, (req, res) => {
+  try {
+    const { message, dateTime } = req.body;
+    
+    // Schedule the announcement
+    cron.schedule(dateTime, async () => {
+      try {
+        await whatsappSock.sendMessage(
+          process.env.WHATSAPP_CHANNEL_JID,
+          { text: message }
+        );
+        logger.info('Announcement sent:', message);
+      } catch (error) {
+        logger.error('Error sending announcement:', error);
+      }
+    }, {
+      timezone: 'Africa/Lagos'
+    });
+    
+    res.json({ message: 'Announcement scheduled successfully' });
+  } catch (error) {
+    logger.error('Error scheduling announcement:', error);
+    res.status(500).json({ error: 'Scheduling failed' });
   }
 });
 
