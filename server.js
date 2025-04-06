@@ -10,8 +10,8 @@ const http = require('http');
 const socketio = require('socket.io');
 const fileUpload = require('express-fileupload');
 const { createObjectCsvWriter } = require('csv-writer');
-const QRCode = require('qrcode'); // For QR code generation
-const Pino = require('pino'); // For better logging
+const QRCode = require('qrcode');
+const Pino = require('pino');
 const cron = require('node-cron');
 
 const app = express();
@@ -29,9 +29,9 @@ const logger = Pino({
 const limiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
 app.use(limiter);
 app.use(express.json());
-app.use(express.static('public')); // Serve static files from the "public" folder
+app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
-app.use(fileUpload()); // Middleware for file uploads
+app.use(fileUpload());
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -44,7 +44,8 @@ const ContactSchema = new mongoose.Schema({
   phone: { type: String, unique: true },
   email: String,
   joinedChannel: { type: Boolean, default: false },
-  optedOut: { type: Boolean, default: false }
+  optedOut: { type: Boolean, default: false },
+  invalidEmail: { type: Boolean, default: false } // Track invalid emails
 });
 const Contact = mongoose.model('Contact', ContactSchema, 'contacts');
 
@@ -52,12 +53,8 @@ const Contact = mongoose.model('Contact', ContactSchema, 'contacts');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 function adminAuth(req, res, next) {
   const token = req.headers['x-admin-token'];
-  if (!token) {
-    return res.status(401).json({ error: 'Missing authentication token' });
-  }
-  if (token !== ADMIN_PASSWORD) {
-    return res.status(403).json({ error: 'Invalid admin password' });
-  }
+  if (!token) return res.status(401).json({ error: 'Missing authentication token' });
+  if (token !== ADMIN_PASSWORD) return res.status(403).json({ error: 'Invalid admin password' });
   next();
 }
 
@@ -67,79 +64,146 @@ const transporter = nodemailer.createTransport({
   auth: { user: process.env.EMAIL, pass: process.env.EMAIL_PASS },
 });
 
-// Send Daily Email Reminders at 2:00 PM WAT
-cron.schedule('0 14 * * *', async () => {
+// Generate VCF file from database
+async function generateVCF() {
   try {
-    const users = await Contact.find({ joinedChannel: false, optedOut: false });
-    users.forEach(user => {
-      transporter.sendMail({
-        from: process.env.EMAIL,
-        to: user.email,
-        subject: 'GET YOUR VCF FILE',
-        html: `<p>Hello ${user.name},<br> Thanks for joining us! Get your VCF file on our WhatsApp channel: <a href="${process.env.WHATSAPP_CHANNEL}">Click here</a></p>`
-      });
+    const contacts = await Contact.find({ invalidEmail: false });
+    let vcfContent = '';
+    contacts.forEach(contact => {
+      vcfContent += `BEGIN:VCARD\nVERSION:3.0\nFN:${contact.name}\nTEL:${contact.phone}\nEMAIL:${contact.email}\nEND:VCARD\n`;
     });
-    logger.info('Daily reminder emails sent successfully.');
+    fs.writeFileSync('contacts.vcf', vcfContent);
+    logger.info('VCF file generated successfully');
   } catch (error) {
-    logger.error('Error sending daily reminders:', error);
-  }
-}, {
-  timezone: 'Africa/Lagos' // Use Nigeria's timezone (WAT)
-});
-
-// Function to send the .vcf file to the WhatsApp channel
-async function sendVCFtoWhatsAppChannel() {
-  try {
-    const channelJID = process.env.WHATSAPP_CHANNEL_JID; // WhatsApp channel JID from .env
-    if (!channelJID) {
-      logger.error('WhatsApp channel JID not set in .env');
-      return;
-    }
-
-    // Path to the .vcf file
-    const vcfFilePath = path.join(__dirname, 'contacts.vcf');
-
-    // Check if the .vcf file exists
-    if (!fs.existsSync(vcfFilePath)) {
-      logger.error('VCF file not found');
-      return;
-    }
-
-    // Send the .vcf file to the WhatsApp channel
-    await whatsappSock.sendMessage(channelJID, {
-      document: fs.readFileSync(vcfFilePath), // Read the file as binary
-      fileName: 'contacts.vcf', // Name of the file
-      mimetype: 'text/vcard', // MIME type for .vcf files
-    });
-
-    logger.info('VCF file sent to WhatsApp channel successfully.');
-  } catch (error) {
-    logger.error('Error sending VCF file to WhatsApp channel:', error);
+    logger.error('Error generating VCF:', error);
   }
 }
+
+// Send emails in batches with rate limiting
+async function sendEmailsInBatches(emails, batchSize = 100) {
+  const totalBatches = Math.ceil(emails.length / batchSize);
+  
+  for (let i = 0; i < totalBatches; i++) {
+    const batch = emails.slice(i * batchSize, (i + 1) * batchSize);
+    
+    try {
+      const mailOptions = {
+        from: process.env.EMAIL,
+        to: batch.join(','),
+        subject: 'Your Daily VCF File',
+        text: 'Attached is the VCF file containing all contacts.',
+        attachments: [{ path: path.join(__dirname, 'contacts.vcf') }]
+      };
+
+      const info = await transporter.sendMail(mailOptions);
+      
+      // Handle invalid emails
+      if (info.rejected && info.rejected.length > 0) {
+        await Contact.updateMany(
+          { email: { $in: info.rejected } },
+          { invalidEmail: true }
+        );
+        logger.warn(`Removed ${info.rejected.length} invalid emails`);
+      }
+
+      // Add delay between batches (1 second per email in batch)
+      await new Promise(resolve => setTimeout(resolve, batch.length * 1000));
+      
+    } catch (error) {
+      logger.error('Error sending email batch:', error);
+    }
+  }
+}
+
+// Schedule daily VCF email at 12:00 AM WAT
+cron.schedule('0 0 * * *', async () => {
+  try {
+    logger.info('Starting daily VCF email process...');
+    
+    // Generate fresh VCF file
+    await generateVCF();
+    
+    // Get valid contacts
+    const users = await Contact.find({ 
+      joinedChannel: false,
+      optedOut: false,
+      invalidEmail: false 
+    });
+    
+    // Extract unique emails
+    const emails = [...new Set(users.map(user => user.email))];
+    
+    // Send emails in batches of 100
+    await sendEmailsInBatches(emails, 100);
+    
+    logger.info('Daily VCF emails sent successfully');
+    
+  } catch (error) {
+    logger.error('Error in daily VCF process:', error);
+  }
+}, {
+  timezone: 'Africa/Lagos' // Nigerian timezone
+});
+
+// WhatsApp Bot Initialization
+let whatsappSock;
+async function startWhatsAppBot() {
+  try {
+    const { state, saveCreds } = await useMultiFileAuthState('auth_info', logger);
+    const { version } = await fetchLatestBaileysVersion();
+    
+    const sock = makeWASocket({
+      version,
+      logger,
+      auth: state,
+      printQRInTerminal: false,
+      getMessage: async () => ({ conversation: '' }),
+    });
+
+    sock.ev.on('creds.update', saveCreds);
+    sock.ev.on('connection.update', async (update) => {
+      const { connection, lastDisconnect, qr } = update;
+      
+      if (connection === 'close') {
+        const shouldReconnect = (lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut);
+        if (shouldReconnect) {
+          logger.warn('Reconnecting WhatsApp bot...');
+          startWhatsAppBot();
+        }
+      } else if (connection === 'open') {
+        logger.info('WhatsApp Bot Connected');
+        whatsappSock = sock;
+        io.emit('whatsappStatus', 'connected');
+      } else if (qr) {
+        QRCode.toDataURL(qr, (err, url) => {
+          if (err) return logger.error('QR Error:', err);
+          io.emit('whatsappQR', url);
+        });
+      }
+    });
+  } catch (error) {
+    logger.error('WhatsApp Bot Error:', error);
+  }
+}
+startWhatsAppBot();
 
 // Registration Endpoint
 app.post('/api/register', async (req, res) => {
   try {
     const { name, phone, email } = req.body;
-    if (!name || !phone || !email) return res.status(400).json({ error: 'All fields are required' });
-
+    if (!name || !phone || !email) return res.status(400).json({ error: 'All fields required' });
+    
     let user = await Contact.findOne({ phone });
     if (!user) {
       user = new Contact({ name, phone, email });
       await user.save();
-
-      // Append the new contact to the .vcf file
-      const vcfEntry = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL:${phone}\nEMAIL:${email}\nEND:VCARD\n`;
-      fs.appendFileSync('contacts.vcf', vcfEntry);
-
-      // Send the updated .vcf file to the WhatsApp channel
-      await sendVCFtoWhatsAppChannel();
+      await generateVCF(); // Update VCF file
     }
+    
     res.json({ message: 'Registered successfully' });
   } catch (error) {
     logger.error('Registration Error:', error);
-    res.status(500).json({ error: 'Failed to register user' });
+    res.status(500).json({ error: 'Registration failed' });
   }
 });
 
@@ -171,43 +235,35 @@ app.post('/api/removeUser', adminAuth, async (req, res) => {
 
 app.post('/api/editUser', adminAuth, async (req, res) => {
   try {
-    const { oldPhone, newName, newPhone } = req.body;
+    const { oldPhone, newName, newPhone, newEmail } = req.body;
     const user = await Contact.findOne({ phone: oldPhone });
     if (!user) return res.status(404).json({ error: 'User not found' });
-
-    user.name = newName;
-    user.phone = newPhone;
+    
+    user.name = newName || user.name;
+    user.phone = newPhone || user.phone;
+    user.email = newEmail || user.email;
     await user.save();
-    res.json({ message: 'User updated successfully' });
+    res.json({ message: 'User updated' });
   } catch (error) {
     logger.error('Error updating user:', error);
-    res.status(500).json({ error: 'Failed to update user' });
+    res.status(500).json({ error: 'Update failed' });
   }
 });
 
-// Admin Login API
-app.post('/api/adminLogin', async (req, res) => {
+app.post('/api/adminLogin', (req, res) => {
   const { password } = req.body;
-  if (password !== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Invalid password' });
-  }
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Invalid password' });
   res.json({ message: 'Login successful' });
 });
 
-// Upload Custom VCF File
 app.post('/api/uploadVCF', adminAuth, (req, res) => {
   const vcfFile = req.files.vcfFile;
-  const uploadPath = path.join(__dirname, 'uploads', 'custom-vcf.vcf');
-  vcfFile.mv(uploadPath, (err) => {
-    if (err) {
-      logger.error('Error uploading VCF file:', err);
-      return res.status(500).send(err);
-    }
-    res.json({ message: 'VCF file uploaded successfully' });
+  vcfFile.mv('contacts.vcf', (err) => {
+    if (err) return res.status(500).send(err);
+    res.json({ message: 'VCF uploaded' });
   });
 });
 
-// Export User Data as CSV
 app.get('/api/exportUsers', adminAuth, async (req, res) => {
   try {
     const users = await Contact.find();
@@ -218,97 +274,29 @@ app.get('/api/exportUsers', adminAuth, async (req, res) => {
         { id: 'phone', title: 'Phone' },
         { id: 'email', title: 'Email' },
         { id: 'joinedChannel', title: 'Joined Channel' },
+        { id: 'invalidEmail', title: 'Invalid Email' }
       ]
     });
-
     await csvWriter.writeRecords(users);
     res.download('users.csv');
   } catch (error) {
-    logger.error('Error exporting users:', error);
-    res.status(500).json({ error: 'Failed to export users' });
+    logger.error('Export Error:', error);
+    res.status(500).json({ error: 'Export failed' });
   }
 });
 
-// Schedule WhatsApp Announcement
-app.post('/api/scheduleAnnouncement', adminAuth, async (req, res) => {
-  const { message, dateTime } = req.body;
-  // Add logic to schedule WhatsApp announcement at specified dateTime
-  res.json({ message: 'Announcement scheduled successfully' });
-});
-
-// Health Check Endpoint
+// Health Check
 app.get('/health', (req, res) => {
-  if (whatsappSock && whatsappSock.authState) {
-    res.status(200).json({ status: 'Bot is running' });
-  } else {
-    res.status(500).json({ status: 'Bot is not connected' });
-  }
+  res.status(200).json({ status: 'Server running' });
 });
 
-// WhatsApp Pair Code Authentication
-let whatsappSock;
-async function startWhatsAppBot() {
-  try {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info', logger);
-    const { version } = await fetchLatestBaileysVersion();
-    const sock = makeWASocket({
-      version,
-      logger,
-      auth: state,
-      printQRInTerminal: false,
-      getMessage: async () => ({ conversation: '' }),
-    });
-
-    sock.ev.on('creds.update', saveCreds);
-
-    // Handle connection updates
-    sock.ev.on('connection.update', async (update) => {
-      const { connection, lastDisconnect, qr } = update;
-
-      if (connection === 'close') {
-        const shouldReconnect = (lastDisconnect.error instanceof Boom) && lastDisconnect.error.output?.statusCode !== DisconnectReason.loggedOut;
-        if (shouldReconnect) {
-          logger.warn('Connection closed due to error, reconnecting...');
-          startWhatsAppBot();
-        } else {
-          logger.warn('Disconnected permanently.');
-        }
-      } else if (connection === 'open') {
-        logger.info('WhatsApp Bot Connected');
-
-        // Send a success message to the bot's own number
-        const botNumber = sock.user.id.split(':')[0]; // Extract the bot's phone number
-        await sock.sendMessage(botNumber, { text: 'WhatsApp bot has successfully connected!' });
-
-        io.emit('whatsappStatus', 'connected');
-      } else if (qr) {
-        QRCode.toDataURL(qr, (err, url) => {
-          if (err) {
-            logger.error('Error generating QR code:', err);
-            return;
-          }
-          io.emit('whatsappQR', url); // Emit the QR code as a base64 image URL
-        });
-      }
-    });
-
-    whatsappSock = sock;
-  } catch (error) {
-    logger.error('Error starting WhatsApp bot:', error);
-  }
-}
-
-startWhatsAppBot();
-
-// WebSocket Connection
+// WebSocket
 io.on('connection', socket => {
-  logger.info('A user connected');
-  socket.on('disconnect', () => {
-    logger.info('User disconnected');
-  });
+  logger.info('Client connected');
+  socket.on('disconnect', () => logger.info('Client disconnected'));
 });
 
-// Server Start
+// Start Server
 server.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
 });
