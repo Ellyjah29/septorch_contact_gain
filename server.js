@@ -5,14 +5,14 @@ const nodemailer = require('nodemailer');
 const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, DisconnectReason } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const path = require('path');
+const cron = require('node-cron');
+const { createObjectCsvWriter } = require('csv-writer');
+const QRCode = require('qrcode');
+const Pino = require('pino');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const socketio = require('socket.io');
 const fileUpload = require('express-fileupload');
-const { createObjectCsvWriter } = require('csv-writer');
-const QRCode = require('qrcode');
-const Pino = require('pino');
-const cron = require('node-cron');
 
 const app = express();
 const server = http.createServer(app);
@@ -25,7 +25,7 @@ const logger = Pino({
   base: null,
 });
 
-// Rate Limiting for Security
+// Rate Limiting
 const limiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
 app.use(limiter);
 app.use(express.json());
@@ -38,7 +38,7 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
   .then(() => logger.info('MongoDB Connected'))
   .catch(err => logger.error('MongoDB Error:', err));
 
-// Contacts Schema
+// Contacts Schema with email validation tracking
 const ContactSchema = new mongoose.Schema({
   name: String,
   phone: { type: String, unique: true },
@@ -49,22 +49,16 @@ const ContactSchema = new mongoose.Schema({
 });
 const Contact = mongoose.model('Contact', ContactSchema, 'contacts');
 
-// Admin Authentication Middleware
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-function adminAuth(req, res, next) {
-  const token = req.headers['x-admin-token'];
-  if (!token) return res.status(401).json({ error: 'Missing authentication token' });
-  if (token !== ADMIN_PASSWORD) return res.status(403).json({ error: 'Invalid admin password' });
-  next();
-}
-
-// Email Setup
+// Email Transporter
 const transporter = nodemailer.createTransport({
-  service: 'Gmail',
-  auth: { user: process.env.EMAIL, pass: process.env.EMAIL_PASS },
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL,
+    pass: process.env.EMAIL_PASS
+  }
 });
 
-// Generate VCF file from database
+// VCF Generation Function
 async function generateVCF() {
   try {
     const contacts = await Contact.find({ invalidEmail: false });
@@ -79,14 +73,14 @@ async function generateVCF() {
   }
 }
 
-// Send emails in batches with rate limiting
+// Batch Email Sending Function
 async function sendEmailsInBatches(emails, batchSize = 100) {
-  const totalBatches = Math.ceil(emails.length / batchSize);
-  
-  for (let i = 0; i < totalBatches; i++) {
-    const batch = emails.slice(i * batchSize, (i + 1) * batchSize);
+  try {
+    const totalBatches = Math.ceil(emails.length / batchSize);
     
-    try {
+    for (let i = 0; i < totalBatches; i++) {
+      const batch = emails.slice(i * batchSize, (i + 1) * batchSize);
+      
       const mailOptions = {
         from: process.env.EMAIL,
         to: batch.join(','),
@@ -106,40 +100,42 @@ async function sendEmailsInBatches(emails, batchSize = 100) {
         logger.warn(`Removed ${info.rejected.length} invalid emails`);
       }
 
-      // Add delay between batches (1 second per email in batch)
+      // Add delay between batches (1 sec per email to comply with Gmail limits)
       await new Promise(resolve => setTimeout(resolve, batch.length * 1000));
-      
-    } catch (error) {
-      logger.error('Error sending email batch:', error);
+      logger.info(`Batch ${i+1}/${totalBatches} sent successfully`);
     }
+  } catch (error) {
+    logger.error('Error sending email batches:', error);
   }
 }
 
-// Schedule daily VCF email at 12:00 AM WAT
+// Daily VCF Email at 12:00 AM Nigerian Time
 cron.schedule('0 0 * * *', async () => {
   try {
-    logger.info('Starting daily VCF email process...');
+    logger.info('Starting daily VCF process...');
     
-    // Generate fresh VCF file
+    // Generate fresh VCF
     await generateVCF();
-    
-    // Get valid contacts
-    const users = await Contact.find({ 
+
+    // Get valid users
+    const users = await Contact.find({
       joinedChannel: false,
       optedOut: false,
-      invalidEmail: false 
+      invalidEmail: false
     });
-    
+
     // Extract unique emails
     const emails = [...new Set(users.map(user => user.email))];
-    
-    // Send emails in batches of 100
+
+    // Send emails in batches
     await sendEmailsInBatches(emails, 100);
-    
-    logger.info('Daily VCF emails sent successfully');
-    
+
+    // Send VCF to WhatsApp channel
+    await sendVCFtoWhatsAppChannel();
+
+    logger.info('Daily VCF process completed');
   } catch (error) {
-    logger.error('Error in daily VCF process:', error);
+    logger.error('Daily process failed:', error);
   }
 }, {
   timezone: 'Africa/Lagos' // Nigerian timezone
@@ -152,7 +148,7 @@ async function startWhatsAppBot() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info', logger);
     const { version } = await fetchLatestBaileysVersion();
     
-    const sock = makeWASocket({
+    whatsappSock = makeWASocket({
       version,
       logger,
       auth: state,
@@ -160,19 +156,18 @@ async function startWhatsAppBot() {
       getMessage: async () => ({ conversation: '' }),
     });
 
-    sock.ev.on('creds.update', saveCreds);
-    sock.ev.on('connection.update', async (update) => {
+    whatsappSock.ev.on('creds.update', saveCreds);
+    whatsappSock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
       
       if (connection === 'close') {
-        const shouldReconnect = (lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut);
+        const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
         if (shouldReconnect) {
           logger.warn('Reconnecting WhatsApp bot...');
           startWhatsAppBot();
         }
       } else if (connection === 'open') {
         logger.info('WhatsApp Bot Connected');
-        whatsappSock = sock;
         io.emit('whatsappStatus', 'connected');
       } else if (qr) {
         QRCode.toDataURL(qr, (err, url) => {
@@ -187,6 +182,38 @@ async function startWhatsAppBot() {
 }
 startWhatsAppBot();
 
+// Send VCF to WhatsApp Channel Endpoint
+app.post('/api/sendVCFToWhatsApp', adminAuth, async (req, res) => {
+  try {
+    await sendVCFtoWhatsAppChannel();
+    res.json({ message: 'VCF sent to WhatsApp channel successfully' });
+  } catch (error) {
+    logger.error('Error sending VCF to WhatsApp:', error);
+    res.status(500).json({ error: 'Failed to send VCF to WhatsApp' });
+  }
+});
+
+// Send VCF to WhatsApp Channel Function
+async function sendVCFtoWhatsAppChannel() {
+  try {
+    const channelJID = process.env.WHATSAPP_CHANNEL_JID;
+    if (!channelJID) {
+      logger.error('WhatsApp channel JID not set');
+      return;
+    }
+    
+    await whatsappSock.sendMessage(channelJID, {
+      document: fs.readFileSync('contacts.vcf'),
+      fileName: 'contacts.vcf',
+      mimetype: 'text/vcard',
+    });
+    
+    logger.info('VCF sent to WhatsApp channel');
+  } catch (error) {
+    logger.error('Error sending VCF to WhatsApp:', error);
+  }
+}
+
 // Registration Endpoint
 app.post('/api/register', async (req, res) => {
   try {
@@ -197,7 +224,6 @@ app.post('/api/register', async (req, res) => {
     if (!user) {
       user = new Contact({ name, phone, email });
       await user.save();
-      await generateVCF(); // Update VCF file
     }
     
     res.json({ message: 'Registered successfully' });
@@ -207,12 +233,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Admin Panel
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-// Admin API Routes
+// Admin API Endpoints
 app.get('/api/getUsers', adminAuth, async (req, res) => {
   try {
     const users = await Contact.find();
@@ -233,34 +254,11 @@ app.post('/api/removeUser', adminAuth, async (req, res) => {
   }
 });
 
-app.post('/api/editUser', adminAuth, async (req, res) => {
-  try {
-    const { oldPhone, newName, newPhone, newEmail } = req.body;
-    const user = await Contact.findOne({ phone: oldPhone });
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    
-    user.name = newName || user.name;
-    user.phone = newPhone || user.phone;
-    user.email = newEmail || user.email;
-    await user.save();
-    res.json({ message: 'User updated' });
-  } catch (error) {
-    logger.error('Error updating user:', error);
-    res.status(500).json({ error: 'Update failed' });
-  }
-});
-
-app.post('/api/adminLogin', (req, res) => {
-  const { password } = req.body;
-  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Invalid password' });
-  res.json({ message: 'Login successful' });
-});
-
 app.post('/api/uploadVCF', adminAuth, (req, res) => {
   const vcfFile = req.files.vcfFile;
   vcfFile.mv('contacts.vcf', (err) => {
     if (err) return res.status(500).send(err);
-    res.json({ message: 'VCF uploaded' });
+    res.json({ message: 'VCF uploaded successfully' });
   });
 });
 
@@ -285,15 +283,18 @@ app.get('/api/exportUsers', adminAuth, async (req, res) => {
   }
 });
 
+// Admin Authentication Middleware
+function adminAuth(req, res, next) {
+  const token = req.headers['x-admin-token'];
+  if (!token || token !== process.env.ADMIN_PASSWORD) {
+    return res.status(403).json({ error: 'Invalid admin credentials' });
+  }
+  next();
+}
+
 // Health Check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'Server running' });
-});
-
-// WebSocket
-io.on('connection', socket => {
-  logger.info('Client connected');
-  socket.on('disconnect', () => logger.info('Client disconnected'));
 });
 
 // Start Server
