@@ -29,7 +29,7 @@ const logger = Pino({
 const limiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
 app.use(limiter);
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public')); // Serve static files from "public" folder
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload());
 
@@ -49,7 +49,7 @@ const ContactSchema = new mongoose.Schema({
 });
 const Contact = mongoose.model('Contact', ContactSchema, 'contacts');
 
-// Email Transporter (Replace with Amazon SES for >500 emails/day)
+// Email Transporter (Replace with Amazon SES for 500+ emails)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -100,7 +100,7 @@ async function sendEmailsInBatches(emails, batchSize = 100) {
         logger.warn(`Removed ${info.rejected.length} invalid emails`);
       }
 
-      // Add delay between batches (1 sec per email to comply with Gmail limits)
+      // Add delay between batches (1 sec per email)
       await new Promise(resolve => setTimeout(resolve, batch.length * 1000));
       logger.info(`Batch ${i+1}/${totalBatches} sent successfully`);
     }
@@ -109,8 +109,8 @@ async function sendEmailsInBatches(emails, batchSize = 100) {
   }
 }
 
-// Daily VCF Email at 1:00 AM Nigerian Time
-cron.schedule('0 0 1 * * *', async () => { // Changed to 1:00 AM WAT
+// Daily VCF Email at 12:00 AM Nigerian Time
+cron.schedule('0 0 * * *', async () => {
   try {
     logger.info('Starting daily VCF process...');
     
@@ -119,6 +119,7 @@ cron.schedule('0 0 1 * * *', async () => { // Changed to 1:00 AM WAT
 
     // Get valid users
     const users = await Contact.find({
+      joinedChannel: false,
       optedOut: false,
       invalidEmail: false
     });
@@ -271,33 +272,6 @@ app.get('/api/exportUsers', adminAuth, async (req, res) => {
   }
 });
 
-// Schedule WhatsApp Announcement Endpoint
-app.post('/api/scheduleAnnouncement', adminAuth, (req, res) => {
-  try {
-    const { message, dateTime } = req.body;
-    
-    // Schedule the announcement
-    cron.schedule(dateTime, async () => {
-      try {
-        await whatsappSock.sendMessage(
-          process.env.WHATSAPP_CHANNEL_JID,
-          { text: message }
-        );
-        logger.info('Announcement sent:', message);
-      } catch (error) {
-        logger.error('Error sending announcement:', error);
-      }
-    }, {
-      timezone: 'Africa/Lagos'
-    });
-    
-    res.json({ message: 'Announcement scheduled successfully' });
-  } catch (error) {
-    logger.error('Error scheduling announcement:', error);
-    res.status(500).json({ error: 'Scheduling failed' });
-  }
-});
-
 // Admin Authentication Middleware
 function adminAuth(req, res, next) {
   const token = req.headers['x-admin-token'];
@@ -315,4 +289,4 @@ app.get('/health', (req, res) => {
 // Start Server
 server.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
-});
+});});
