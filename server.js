@@ -100,7 +100,7 @@ async function sendEmailsInBatches(emails, batchSize = 100) {
         logger.warn(`Removed ${info.rejected.length} invalid emails`);
       }
 
-      // Add delay between batches (1 sec per email)
+      // Add delay between batches (1 sec per email to comply with Gmail limits)
       await new Promise(resolve => setTimeout(resolve, batch.length * 1000));
       logger.info(`Batch ${i+1}/${totalBatches} sent successfully`);
     }
@@ -109,8 +109,8 @@ async function sendEmailsInBatches(emails, batchSize = 100) {
   }
 }
 
-// Daily VCF Email at 12:00 AM Nigerian Time
-cron.schedule('0 0 * * *', async () => {
+// Daily VCF Email at 1:15 AM Nigerian Time
+cron.schedule('15 1 * * *', async () => {
   try {
     logger.info('Starting daily VCF process...');
     
@@ -289,4 +289,4 @@ app.get('/health', (req, res) => {
 // Start Server
 server.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
-});});
+});
