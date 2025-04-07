@@ -77,10 +77,10 @@ async function generateVCF() {
 async function sendEmailsInBatches(emails, batchSize = 100) {
   try {
     const totalBatches = Math.ceil(emails.length / batchSize);
-    
+
     for (let i = 0; i < totalBatches; i++) {
       const batch = emails.slice(i * batchSize, (i + 1) * batchSize);
-      
+
       const mailOptions = {
         from: process.env.EMAIL,
         to: batch.join(','),
@@ -90,7 +90,7 @@ async function sendEmailsInBatches(emails, batchSize = 100) {
       };
 
       const info = await transporter.sendMail(mailOptions);
-      
+
       // Automatically remove invalid emails
       if (info.rejected && info.rejected.length > 0) {
         await Contact.updateMany(
@@ -102,18 +102,18 @@ async function sendEmailsInBatches(emails, batchSize = 100) {
 
       // Add delay between batches (1 sec per email to comply with Gmail limits)
       await new Promise(resolve => setTimeout(resolve, batch.length * 1000));
-      logger.info(`Batch ${i+1}/${totalBatches} sent successfully`);
+      logger.info(`Batch ${i + 1}/${totalBatches} sent successfully`);
     }
   } catch (error) {
     logger.error('Error sending email batches:', error);
   }
 }
 
-// Daily VCF Email at 1:00 AM Nigerian Time
-cron.schedule('0 1 * * *', async () => {
+// Daily VCF Email at 12:00 AM Nigerian Time
+cron.schedule('0 0 * * *', async () => {
   try {
     logger.info('Starting daily VCF process...');
-    
+
     // Generate fresh VCF
     await generateVCF();
 
@@ -147,7 +147,7 @@ async function startWhatsAppBot() {
   try {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info', logger);
     const { version } = await fetchLatestBaileysVersion();
-    
+
     whatsappSock = makeWASocket({
       version,
       logger,
@@ -159,7 +159,7 @@ async function startWhatsAppBot() {
     whatsappSock.ev.on('creds.update', saveCreds);
     whatsappSock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
-      
+
       if (connection === 'close') {
         const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
         if (shouldReconnect) {
@@ -190,13 +190,13 @@ async function sendVCFtoWhatsAppChannel() {
       logger.error('WhatsApp channel JID not set');
       return;
     }
-    
+
     await whatsappSock.sendMessage(channelJID, {
       document: fs.readFileSync('contacts.vcf'),
       fileName: 'contacts.vcf',
       mimetype: 'text/vcard',
     });
-    
+
     logger.info('VCF sent to WhatsApp channel');
   } catch (error) {
     logger.error('Error sending VCF to WhatsApp:', error);
@@ -208,13 +208,13 @@ app.post('/api/register', async (req, res) => {
   try {
     const { name, phone, email } = req.body;
     if (!name || !phone || !email) return res.status(400).json({ error: 'All fields required' });
-    
+
     let user = await Contact.findOne({ phone });
     if (!user) {
       user = new Contact({ name, phone, email });
       await user.save();
     }
-    
+
     res.json({ message: 'Registered successfully' });
   } catch (error) {
     logger.error('Registration Error:', error);
