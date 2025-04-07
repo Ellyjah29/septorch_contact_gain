@@ -109,8 +109,8 @@ async function sendEmailsInBatches(emails, batchSize = 100) {
   }
 }
 
-// Daily VCF Email at 1:15 AM Nigerian Time
-cron.schedule('15 1 * * *', async () => {
+// Daily VCF Email at 1:00 AM Nigerian Time
+cron.schedule('0 1 * * *', async () => {
   try {
     logger.info('Starting daily VCF process...');
     
@@ -284,6 +284,11 @@ function adminAuth(req, res, next) {
 // Health Check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'Server running' });
+});
+
+// Serve Admin Panel
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 // Start Server
