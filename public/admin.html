@@ -23,55 +23,52 @@
       width: 100px;
       margin-bottom: 10px;
     }
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+    header p {
+      margin: 5px 0 0;
+      font-size: 1rem;
+    }
     main {
       padding: 20px;
     }
     section {
       background: rgba(255, 255, 255, 0.9);
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
       padding: 20px;
+      margin-bottom: 20px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
     }
     th, td {
-      padding: 10px;
+      border: 1px solid #ddd;
+      padding: 8px;
       text-align: left;
-      border-bottom: 1px solid #ddd;
     }
     th {
-      background: #f2f2f2;
+      background-color: #f4f4f4;
     }
-    tr:hover {
-      background-color: #f1f1f1;
+    button {
+      padding: 8px 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
     }
     .hidden {
       display: none;
     }
-    #whatsappStatus {
+    .error {
+      color: red;
       font-weight: bold;
-      margin: 10px 0;
-    }
-    #qrCodeContainer img {
-      max-width: 200px;
-      margin-top: 10px;
-    }
-    .status-indicator {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      display: inline-block;
-      margin-right: 5px;
-    }
-    .status-success {
-      background: #4CAF50;
-    }
-    .status-error {
-      background: #f44336;
     }
   </style>
 </head>
@@ -85,30 +82,33 @@
     <!-- Admin Authentication -->
     <section id="authSection">
       <h2>Admin Login</h2>
-      <label for="adminPassword">Password:</label>
-      <input type="password" id="adminPassword" placeholder="Admin Password">
-      <button id="loginBtn">Login</button>
-      <p id="loginError" class="hidden" style="color: red;">Invalid password</p>
+      <label for="adminPassword">Enter Admin Password:</label>
+      <input type="password" id="adminPassword" placeholder="Admin Password" aria-label="Admin Password">
+      <button id="loginBtn" aria-label="Login Button">Login</button>
+      <p id="loginError" class="hidden error">Invalid password, please try again.</p>
     </section>
 
-    <!-- Admin Dashboard -->
+    <!-- Admin Dashboard (hidden by default) -->
     <section id="adminDashboard" class="hidden">
       <h2>Dashboard</h2>
-      
+
       <!-- WhatsApp Status -->
       <div id="whatsappStatusContainer">
-        <span class="status-indicator" id="whatsappStatusLight"></span>
-        <span id="whatsappStatusLabel">WhatsApp Bot Status: Checking...</span>
-      </div>
-      <div id="qrCodeContainer">
-        <img id="qrCode" class="hidden">
-        <p id="qrStatus">QR Code status: Waiting</p>
+        <h3>WhatsApp Bot Status</h3>
+        <p id="whatsappStatus">WhatsApp Bot is disconnected</p>
+        <hr>
+        <!-- QR Code Section -->
+        <h3>WhatsApp Login QR Code</h3>
+        <div id="qrCodeContainer">
+          <img id="qrCode" class="hidden" alt="QR Code">
+          <p id="qrStatus">Waiting for QR Code...</p>
+        </div>
       </div>
       <hr>
 
       <!-- User Management -->
       <h3>User Management</h3>
-      <button id="loadUsersBtn">Load Users</button>
+      <button id="loadUsersBtn" aria-label="Load Users Button">Load All Users</button>
       <table id="userTable">
         <thead>
           <tr>
@@ -116,68 +116,44 @@
             <th>Phone</th>
             <th>Email</th>
             <th>Joined Channel</th>
-            <th>Invalid Email</th>
-            <th>Actions</th>
+            <th>Email Status</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody id="userTableBody">
-          <!-- User data will appear here -->
+          <!-- User rows will be dynamically inserted here -->
         </tbody>
       </table>
-      <button id="exportCSVBtn">Export Users to CSV</button>
-      <hr>
 
-      <!-- VCF Management -->
-      <h3>VCF File Operations</h3>
-      <form id="vcfForm">
-        <input type="file" id="vcfFile" accept=".vcf" required>
-        <button type="submit">Upload VCF</button>
-        <button type="reset">Reset</button>
-      </form>
-      <button id="sendVCFBtn">Send VCF to WhatsApp Now</button>
-      <hr>
+      <!-- Export CSV Button -->
+      <button id="exportCSVBtn" aria-label="Export Users to CSV">Export Users as CSV</button>
 
-      <!-- Announcement Scheduler -->
-      <h3>Schedule WhatsApp Announcement</h3>
-      <form id="announcementForm">
-        <label for="announcementMessage">Message:</label>
-        <textarea id="announcementMessage" required></textarea>
-        <label for="announcementDate">Date/Time (Nigerian Time):</label>
-        <input type="datetime-local" id="announcementDate" required>
-        <button type="submit">Schedule</button>
-        <button type="reset">Clear</button>
-      </form>
+      <!-- Send VCF to WhatsApp -->
+      <button id="sendVCFBtn" aria-label="Send VCF to WhatsApp">Send VCF to WhatsApp</button>
     </section>
   </main>
-  <footer>
-    <p>&copy; 2025 SEPTORCH. Powered by <a href="https://www.tiktok.com/@septorch">Septorch</a></p>
-  </footer>
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    let adminToken = '';
 
-    // WhatsApp status indicator
+  <script>
+    // Initialize variables
+    let adminToken = null;
+
+    // Socket.io connection
+    const socket = io();
+
+    // Handle WhatsApp status updates
     socket.on('whatsappStatus', (status) => {
-      const statusLight = document.getElementById('whatsappStatusLight');
-      const statusLabel = document.getElementById('whatsappStatusLabel');
-      
-      if(status === 'connected') {
-        statusLight.className = 'status-indicator status-success';
-        statusLabel.textContent = 'WhatsApp Bot Status: Connected';
-      } else {
-        statusLight.className = 'status-indicator status-error';
-        statusLabel.textContent = 'WhatsApp Bot Status: Disconnected';
-      }
+      const whatsappStatus = document.getElementById('whatsappStatus');
+      whatsappStatus.textContent = status === 'connected' 
+        ? 'WhatsApp Bot is connected' 
+        : 'WhatsApp Bot is disconnected';
     });
 
-    // QR Code handler
-    socket.on('whatsappQR', (qrCodeData) => {
+    // Handle WhatsApp QR code updates
+    socket.on('whatsappQR', (url) => {
       const qrCode = document.getElementById('qrCode');
       const qrStatus = document.getElementById('qrStatus');
-      
-      if(qrCodeData) {
-        qrCode.src = qrCodeData;
+      if (url) {
+        qrCode.src = url;
         qrCode.classList.remove('hidden');
         qrStatus.textContent = 'Scan QR code to connect WhatsApp';
       } else {
@@ -186,7 +162,7 @@
       }
     });
 
-    // Admin login
+    // Admin Login
     document.getElementById('loginBtn').addEventListener('click', async () => {
       const password = document.getElementById('adminPassword').value;
       try {
@@ -196,8 +172,7 @@
           body: JSON.stringify({ password })
         });
         const data = await res.json();
-        
-        if(data.message === 'Login successful') {
+        if (data.message === 'Login successful') {
           adminToken = password;
           document.getElementById('authSection').classList.add('hidden');
           document.getElementById('adminDashboard').classList.remove('hidden');
@@ -209,17 +184,15 @@
       }
     });
 
-    // Load users
+    // Load Users
     document.getElementById('loadUsersBtn').addEventListener('click', async () => {
       try {
         const res = await fetch('/api/getUsers', {
           headers: { 'x-admin-token': adminToken }
         });
         const users = await res.json();
-        
         const tbody = document.getElementById('userTableBody');
         tbody.innerHTML = '';
-        
         users.forEach(user => {
           const row = document.createElement('tr');
           row.innerHTML = `
@@ -237,45 +210,26 @@
       }
     });
 
-    // Remove user
+    // Remove User
     window.removeUser = async (phone) => {
       try {
         const res = await fetch('/api/removeUser', {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            'x-admin-token': adminToken 
+            'x-admin-token': adminToken
           },
           body: JSON.stringify({ phone })
         });
         const data = await res.json();
         alert(data.message);
-        document.getElementById('loadUsersBtn').click();
+        document.getElementById('loadUsersBtn').click(); // Reload users
       } catch (error) {
         alert('Error removing user');
       }
     };
 
-    // Upload VCF
-    document.getElementById('vcfForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData();
-      formData.append('vcfFile', document.getElementById('vcfFile').files[0]);
-      
-      try {
-        const res = await fetch('/api/uploadVCF', {
-          method: 'POST',
-          headers: { 'x-admin-token': adminToken },
-          body: formData
-        });
-        const data = await res.json();
-        alert(data.message);
-      } catch (error) {
-        alert('Error uploading VCF');
-      }
-    });
-
-    // Export CSV
+    // Export Users as CSV
     document.getElementById('exportCSVBtn').addEventListener('click', async () => {
       try {
         const res = await fetch('/api/exportUsers', {
@@ -292,14 +246,14 @@
       }
     });
 
-    // Send VCF to WhatsApp manually
+    // Send VCF to WhatsApp
     document.getElementById('sendVCFBtn').addEventListener('click', async () => {
       try {
         const res = await fetch('/api/sendVCFToWhatsApp', {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            'x-admin-token': adminToken 
+            'x-admin-token': adminToken
           }
         });
         const data = await res.json();
