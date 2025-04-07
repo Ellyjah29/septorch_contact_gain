@@ -109,8 +109,8 @@ async function sendEmailsInBatches(emails, batchSize = 100) {
   }
 }
 
-// Daily VCF Email at 12:00 AM Nigerian Time
-cron.schedule('0 0 * * *', async () => {
+// Daily VCF Email at 1:00 AM Nigerian Time
+cron.schedule('0 1 * * *', async () => {
   try {
     logger.info('Starting daily VCF process...');
 
@@ -280,6 +280,15 @@ function adminAuth(req, res, next) {
   }
   next();
 }
+
+// Admin Login API
+app.post('/api/adminLogin', async (req, res) => {
+  const { password } = req.body;
+  if (password !== process.env.ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Invalid password' });
+  }
+  res.json({ message: 'Login successful' });
+});
 
 // Health Check
 app.get('/health', (req, res) => {
