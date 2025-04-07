@@ -9,75 +9,135 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed;
+      background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed; /* Updated background image */
       background-size: cover;
       color: #333;
     }
+
     header {
       background: rgba(0, 0, 0, 0.7);
       color: white;
       text-align: center;
       padding: 20px 0;
     }
+
     header img {
       width: 100px;
       margin-bottom: 10px;
     }
+
     header h1 {
       margin: 0;
       font-size: 2rem;
     }
+
     header p {
       margin: 5px 0 0;
       font-size: 1rem;
     }
+
     main {
       padding: 20px;
     }
+
     section {
       background: rgba(255, 255, 255, 0.9);
       border-radius: 8px;
-      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       margin-bottom: 20px;
+      padding: 20px;
     }
+
+    h2, h3 {
+      margin-top: 0;
+      color: #4CAF50;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+
+    input[type="password"], input[type="file"], textarea, input[type="datetime-local"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
+      margin-top: 10px;
     }
+
     th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
+      padding: 10px;
       text-align: left;
+      border-bottom: 1px solid #ddd;
     }
+
     th {
-      background-color: #f4f4f4;
+      background: #f2f2f2;
     }
-    button {
-      padding: 8px 12px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
+
+    tr:hover {
+      background-color: #f1f1f1;
     }
-    button:hover {
-      background-color: #0056b3;
-    }
+
     .hidden {
       display: none;
     }
-    .error {
-      color: red;
+
+    #whatsappStatus {
       font-weight: bold;
+    }
+
+    #qrCodeContainer img {
+      max-width: 200px;
+      margin-top: 10px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 10px 0;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+
+    footer a {
+      color: #fff;
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
   <header>
-    <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo">
+    <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo"> <!-- Updated logo image -->
     <h1>Admin Panel</h1>
     <p>Manage Users and WhatsApp Bot</p>
   </header>
+
   <main>
     <!-- Admin Authentication -->
     <section id="authSection">
@@ -85,7 +145,7 @@
       <label for="adminPassword">Enter Admin Password:</label>
       <input type="password" id="adminPassword" placeholder="Admin Password" aria-label="Admin Password">
       <button id="loginBtn" aria-label="Login Button">Login</button>
-      <p id="loginError" class="hidden error">Invalid password, please try again.</p>
+      <p id="loginError" class="hidden" style="color: red;">Invalid password, please try again.</p>
     </section>
 
     <!-- Admin Dashboard (hidden by default) -->
@@ -93,17 +153,17 @@
       <h2>Dashboard</h2>
 
       <!-- WhatsApp Status -->
-      <div id="whatsappStatusContainer">
-        <h3>WhatsApp Bot Status</h3>
-        <p id="whatsappStatus">WhatsApp Bot is disconnected</p>
-        <hr>
-        <!-- QR Code Section -->
-        <h3>WhatsApp Login QR Code</h3>
-        <div id="qrCodeContainer">
-          <img id="qrCode" class="hidden" alt="QR Code">
-          <p id="qrStatus">Waiting for QR Code...</p>
-        </div>
+      <div id="whatsappStatus">WhatsApp Bot is disconnected</div>
+
+      <hr>
+
+      <!-- QR Code Section -->
+      <h3>WhatsApp Login QR Code</h3>
+      <div id="qrCodeContainer">
+        <img id="qrCode" class="hidden" alt="QR Code">
+        <p id="qrStatus">Waiting for QR Code...</p>
       </div>
+
       <hr>
 
       <!-- User Management -->
@@ -116,151 +176,189 @@
             <th>Phone</th>
             <th>Email</th>
             <th>Joined Channel</th>
-            <th>Email Status</th>
-            <th>Action</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="userTableBody">
-          <!-- User rows will be dynamically inserted here -->
+          <!-- User rows will go here -->
         </tbody>
       </table>
+      <button id="exportCSVBtn" aria-label="Export CSV Button">Export User Data as CSV</button>
 
-      <!-- Export CSV Button -->
-      <button id="exportCSVBtn" aria-label="Export Users to CSV">Export Users as CSV</button>
+      <hr>
 
-      <!-- Send VCF to WhatsApp -->
-      <button id="sendVCFBtn" aria-label="Send VCF to WhatsApp">Send VCF to WhatsApp</button>
+      <!-- VCF File Upload -->
+      <h3>Upload Custom VCF</h3>
+      <form id="vcfForm" enctype="multipart/form-data">
+        <input type="file" id="vcfFile" name="vcfFile" accept=".vcf" required aria-label="VCF File Input">
+        <button type="submit" aria-label="Upload VCF Button">Upload VCF</button>
+        <button type="reset" aria-label="Reset VCF Form">Reset</button>
+      </form>
+
+      <hr>
+
+      <!-- Announcements -->
+      <h3>Schedule WhatsApp Announcement</h3>
+      <form id="announcementForm">
+        <label for="announcementMessage">Message:</label>
+        <textarea id="announcementMessage" required aria-label="Announcement Message"></textarea>
+        <label for="announcementDate">Schedule Date/Time:</label>
+        <input type="datetime-local" id="announcementDate" required aria-label="Announcement Date and Time">
+        <button type="submit" aria-label="Schedule Announcement Button">Schedule Announcement</button>
+        <button type="reset" aria-label="Reset Announcement Form">Reset</button>
+      </form>
     </section>
   </main>
 
+  <footer>
+    <p>&copy; 2025 SEPTORCH. Powered by <a href="https://www.tiktok.com/@septorch">Septorch</a></p>
+  </footer>
+
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    // Initialize variables
-    let adminToken = null;
-
-    // Socket.io connection
     const socket = io();
+    const loginBtn = document.getElementById('loginBtn');
+    const adminPassword = document.getElementById('adminPassword');
+    const loginError = document.getElementById('loginError');
+    const authSection = document.getElementById('authSection');
+    const adminDashboard = document.getElementById('adminDashboard');
 
-    // Handle WhatsApp status updates
+    // Handle WhatsApp bot status updates
     socket.on('whatsappStatus', (status) => {
       const whatsappStatus = document.getElementById('whatsappStatus');
       whatsappStatus.textContent = status === 'connected' 
         ? 'WhatsApp Bot is connected' 
         : 'WhatsApp Bot is disconnected';
+      whatsappStatus.style.color = status === 'connected' ? 'green' : 'red';
     });
 
-    // Handle WhatsApp QR code updates
-    socket.on('whatsappQR', (url) => {
-      const qrCode = document.getElementById('qrCode');
+    // Handle QR Code updates
+    socket.on('whatsappQR', (qrCodeData) => {
+      const qrCodeElement = document.getElementById('qrCode');
       const qrStatus = document.getElementById('qrStatus');
-      if (url) {
-        qrCode.src = url;
-        qrCode.classList.remove('hidden');
-        qrStatus.textContent = 'Scan QR code to connect WhatsApp';
+      
+      if (qrCodeData) {
+        qrCodeElement.src = qrCodeData;
+        qrCodeElement.classList.remove('hidden');
+        qrStatus.textContent = 'Scan the QR code with WhatsApp.';
       } else {
-        qrCode.classList.add('hidden');
-        qrStatus.textContent = 'QR code unavailable';
+        qrCodeElement.classList.add('hidden');
+        qrStatus.textContent = 'QR Code not available.';
       }
     });
 
     // Admin Login
-    document.getElementById('loginBtn').addEventListener('click', async () => {
-      const password = document.getElementById('adminPassword').value;
-      try {
-        const res = await fetch('/api/adminLogin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password })
-        });
-        const data = await res.json();
+    loginBtn.addEventListener('click', () => {
+      const password = adminPassword.value;
+      fetch('/api/adminLogin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      })
+      .then(res => res.json())
+      .then(data => {
         if (data.message === 'Login successful') {
-          adminToken = password;
-          document.getElementById('authSection').classList.add('hidden');
-          document.getElementById('adminDashboard').classList.remove('hidden');
+          authSection.classList.add('hidden');
+          adminDashboard.classList.remove('hidden');
         } else {
-          document.getElementById('loginError').classList.remove('hidden');
+          loginError.classList.remove('hidden');
         }
-      } catch (error) {
-        alert('Login failed');
-      }
+      })
+      .catch(() => loginError.classList.remove('hidden'));
     });
 
     // Load Users
-    document.getElementById('loadUsersBtn').addEventListener('click', async () => {
-      try {
-        const res = await fetch('/api/getUsers', {
-          headers: { 'x-admin-token': adminToken }
-        });
-        const users = await res.json();
-        const tbody = document.getElementById('userTableBody');
-        tbody.innerHTML = '';
+    document.getElementById('loadUsersBtn').addEventListener('click', () => {
+      fetch('/api/getUsers', {
+        method: 'GET',
+        headers: { 'x-admin-token': adminPassword.value }
+      })
+      .then(res => res.json())
+      .then(users => {
+        const userTableBody = document.getElementById('userTableBody');
+        userTableBody.innerHTML = '';
         users.forEach(user => {
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${user.name}</td>
             <td>${user.phone}</td>
             <td>${user.email}</td>
-            <td>${user.joinedChannel ? '✅ Yes' : '❌ No'}</td>
-            <td>${user.invalidEmail ? '⚠️ Invalid' : '✅ Valid'}</td>
-            <td><button onclick="removeUser('${user.phone}')">Remove</button></td>
+            <td>${user.joinedChannel ? 'Yes' : 'No'}</td>
+            <td><button onclick="removeUser('${user.phone}')" title="Remove User">Remove</button></td>
           `;
-          tbody.appendChild(row);
+          userTableBody.appendChild(row);
         });
-      } catch (error) {
-        alert('Error loading users');
-      }
+      })
+      .catch(() => alert('Error loading users.'));
     });
 
     // Remove User
-    window.removeUser = async (phone) => {
-      try {
-        const res = await fetch('/api/removeUser', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-admin-token': adminToken
-          },
-          body: JSON.stringify({ phone })
-        });
-        const data = await res.json();
+    window.removeUser = (phone) => {
+      fetch('/api/removeUser', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-token': adminPassword.value 
+        },
+        body: JSON.stringify({ phone })
+      })
+      .then(res => res.json())
+      .then(data => {
         alert(data.message);
-        document.getElementById('loadUsersBtn').click(); // Reload users
-      } catch (error) {
-        alert('Error removing user');
-      }
+        document.getElementById('loadUsersBtn').click();
+      })
+      .catch(() => alert('Error removing user.'));
     };
 
-    // Export Users as CSV
-    document.getElementById('exportCSVBtn').addEventListener('click', async () => {
-      try {
-        const res = await fetch('/api/exportUsers', {
-          headers: { 'x-admin-token': adminToken }
-        });
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'users.csv';
-        a.click();
-      } catch (error) {
-        alert('Error exporting CSV');
-      }
+    // Export CSV
+    document.getElementById('exportCSVBtn').addEventListener('click', () => {
+      fetch('/api/exportUsers', {
+        method: 'GET',
+        headers: { 'x-admin-token': adminPassword.value }
+      })
+      .then(res => res.blob())
+      .then(blob => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'users.csv';
+        link.click();
+      })
+      .catch(() => alert('Error exporting CSV.'));
     });
 
-    // Send VCF to WhatsApp
-    document.getElementById('sendVCFBtn').addEventListener('click', async () => {
-      try {
-        const res = await fetch('/api/sendVCFToWhatsApp', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-admin-token': adminToken
-          }
-        });
-        const data = await res.json();
-        alert(data.message);
-      } catch (error) {
-        alert('Error sending VCF');
-      }
+    // Upload VCF
+    document.getElementById('vcfForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append('vcfFile', document.getElementById('vcfFile').files[0]);
+
+      fetch('/api/uploadVCF', {
+        method: 'POST',
+        headers: { 'x-admin-token': adminPassword.value },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => alert(data.message))
+      .catch(() => alert('Error uploading VCF file.'));
+    });
+
+    // Schedule Announcement
+    document.getElementById('announcementForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const message = document.getElementById('announcementMessage').value;
+      const dateTime = document.getElementById('announcementDate').value;
+
+      fetch('/api/scheduleAnnouncement', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-token': adminPassword.value 
+        },
+        body: JSON.stringify({ message, dateTime })
+      })
+      .then(res => res.json())
+      .then(data => alert(data.message))
+      .catch(() => alert('Error scheduling announcement.'));
     });
   </script>
 </body>
