@@ -109,8 +109,8 @@ async function sendEmailsInBatches(emails, batchSize = 100) {
   }
 }
 
-// Daily VCF Email at 1:00 AM Nigerian Time
-cron.schedule('0 1 * * *', async () => {
+// Daily VCF Email at 6:00 AM Nigerian Time
+cron.schedule('0 6 * * *', async () => {
   try {
     logger.info('Starting daily VCF process...');
 
