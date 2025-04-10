@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
-const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, DisconnectReason } = require('@adiwajshing/baileys'); // Updated package name
 const fs = require('fs');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
@@ -10,10 +10,6 @@ const http = require('http');
 const socketio = require('socket.io');
 const fileUpload = require('express-fileupload');
 const { createObjectCsvWriter } = require('csv-writer');
-const cheerio = require('cheerio'); // Ensure this module is installed
-const QRCode = require('qrcode'); // For QR code generation
-const Pino = require('pino'); // For better logging
-const cron = require('node-cron');
 
 // Initialize Express app
 const app = express();
@@ -22,7 +18,7 @@ const io = socketio(server);
 const PORT = process.env.PORT || 3000;
 
 // Logger Setup
-const logger = Pino({ level: 'debug', base: null });
+const logger = console; // Use console for logging
 
 // Rate Limiting for Security
 const limiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
@@ -55,22 +51,16 @@ function adminAuth(req, res, next) {
   next();
 }
 
-// Email Setup
-const transporter = nodemailer.createTransport({
-  service: 'Gmail',
-  auth: { user: process.env.EMAIL, pass: process.env.EMAIL_PASS }
-});
-
 // Start WhatsApp Bot
 let whatsappSock;
 async function startWhatsAppBot() {
   try {
-    const { state, saveCreds } = await useMultiFileAuthState('./session', logger);
+    const { state, saveCreds } = await useMultiFileAuthState('./session');
     const { version } = await fetchLatestBaileysVersion();
 
     const sock = makeWASocket({
       version,
-      logger,
+      logger: console,
       auth: state,
       printQRInTerminal: false,
       getMessage: async () => ({ conversation: '' }),
@@ -98,6 +88,7 @@ async function startWhatsAppBot() {
         await sock.sendMessage(`${botNumber}@c.us`, { text: 'WhatsApp bot has successfully connected!' });
         io.emit('whatsappStatus', 'connected');
       } else if (qr) {
+        const QRCode = require('qrcode'); // Dynamically import qrcode
         QRCode.toDataURL(qr, (err, url) => {
           if (err) {
             logger.error('Error generating QR code:', err);
@@ -222,62 +213,6 @@ app.post('/api/removeUser', adminAuth, async (req, res) => {
     logger.error('Error removing user:', error);
     res.status(500).json({ error: 'Failed to remove user' });
   }
-});
-
-// Export Users to CSV
-app.post('/api/exportUsers', adminAuth, async (req, res) => {
-  try {
-    const users = await Contact.find();
-    const csvWriter = createObjectCsvWriter({
-      path: 'users.csv',
-      header: [
-        { id: 'name', title: 'Name' },
-        { id: 'phone', title: 'Phone' },
-        { id: 'email', title: 'Email' },
-        { id: 'joinedChannel', title: 'Joined Channel' }
-      ]
-    });
-    await csvWriter.writeRecords(users);
-    res.download('users.csv');
-  } catch (error) {
-    logger.error('Error exporting users:', error);
-    res.status(500).json({ error: 'Failed to export users' });
-  }
-});
-
-// Schedule WhatsApp Announcement
-app.post('/api/scheduleAnnouncement', adminAuth, async (req, res) => {
-  const { message, dateTime } = req.body;
-
-  if (!message || !dateTime) {
-    return res.status(400).json({ error: 'Message and date/time are required' });
-  }
-
-  const announcementTime = new Date(dateTime);
-  if (isNaN(announcementTime.getTime())) {
-    return res.status(400).json({ error: 'Invalid date/time format' });
-  }
-
-  // Schedule announcement using node-cron
-  cron.schedule(
-    announcementTime,
-    async () => {
-      try {
-        const channelJID = process.env.WHATSAPP_CHANNEL_JID;
-        if (!channelJID) {
-          logger.error('WhatsApp channel JID not set in .env');
-          return;
-        }
-        await whatsappSock.sendMessage(channelJID, { text: message });
-        logger.info('Announcement sent successfully.');
-      } catch (error) {
-        logger.error('Error sending announcement:', error);
-      }
-    },
-    { timezone: 'Africa/Lagos' }
-  );
-
-  res.json({ message: 'Announcement scheduled successfully' });
 });
 
 // Health Check Endpoint
