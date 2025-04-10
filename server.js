@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
-const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: Baileys } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
@@ -30,7 +30,6 @@ app.use(limiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public')); // Serve static files from the "public" folder
-app.use(fileUpload()); // Middleware for file uploads
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -66,15 +65,16 @@ const transporter = nodemailer.createTransport({
 let whatsappSock;
 async function startWhatsAppBot() {
   try {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info', logger);
-    const { version } = await fetchLatestBaileysVersion();
+    const { state, saveCreds } = await Baileys.useMultiFileAuthState('./session');
+    const { version } = await Baileys.fetchLatestBaileysVersion();
 
-    const sock = makeWASocket({
+    const sock = Baileys.makeWASocket({
       version,
       logger,
       auth: state,
       printQRInTerminal: false,
       getMessage: async () => ({ conversation: '' }),
+      browser: 'GiftedBot', // User agent
     });
 
     sock.ev.on('creds.update', saveCreds);
@@ -84,7 +84,7 @@ async function startWhatsAppBot() {
       const { connection, lastDisconnect, qr } = update;
 
       if (connection === 'close') {
-        const shouldReconnect = (lastDisconnect.error instanceof Boom) && lastDisconnect.error.output?.statusCode !== DisconnectReason.loggedOut;
+        const shouldReconnect = (lastDisconnect.error instanceof Baileys.DisconnectReason) && lastDisconnect.error.output.statusCode !== Baileys.DisconnectReason.loggedOut;
         if (shouldReconnect) {
           logger.warn('Connection closed due to error, reconnecting...');
           startWhatsAppBot();
@@ -94,7 +94,7 @@ async function startWhatsAppBot() {
       } else if (connection === 'open') {
         logger.info('WhatsApp Bot Connected');
         // Send a success message to the bot's own number
-        const botNumber = sock.user.id.split(':')[0]; // Extract the bot's phone number
+        const botNumber = sock.user.id.split(':')[0];
         await sock.sendMessage(`${botNumber}@c.us`, { text: 'WhatsApp bot has successfully connected!' });
         io.emit('whatsappStatus', 'connected');
       } else if (qr) {
@@ -248,6 +248,24 @@ app.post('/api/adminLogin', async (req, res) => {
   }
   res.json({ message: 'Login successful' });
 });
+
+// Send Daily Email Reminders at 2:00 PM WAT
+cron.schedule('0 14 * * *', async () => {
+  try {
+    const users = await Contact.find({ joinedChannel: false, optedOut: false });
+    users.forEach(user => {
+      transporter.sendMail({
+        from: process.env.EMAIL,
+        to: user.email,
+        subject: 'GET YOUR VCF FILE',
+        html: `<p>Hello ${user.name},<br> Thanks for joining us! Get your VCF file on our WhatsApp channel: <a href="${process.env.WHATSAPP_CHANNEL}">Click here</a></p>`
+      });
+    });
+    logger.info('Daily reminder emails sent successfully.');
+  } catch (error) {
+    logger.error('Error sending daily reminders:', error);
+  }
+}, { timezone: 'Africa/Lagos' }); // Use Nigeria's timezone (WAT)
 
 // Health Check Endpoint
 app.get('/health', (req, res) => {
