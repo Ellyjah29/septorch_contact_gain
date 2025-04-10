@@ -2,18 +2,17 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const nodemailer = require('nodemailer');
 const { default: Baileys } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const socketio = require('socket.io');
-const fileUpload = require('express-fileupload');
-const { createObjectCsvWriter } = require('csv-writer');
+const axios = require('axios');
+const FormData = require('form-data');
+const cheerio = require('cheerio');
 const QRCode = require('qrcode'); // For QR code generation
 const Pino = require('pino'); // For better logging
-const cron = require('node-cron');
 
 // Initialize Express app
 const app = express();
@@ -55,12 +54,6 @@ function adminAuth(req, res, next) {
   next();
 }
 
-// Email Setup
-const transporter = nodemailer.createTransport({
-  service: 'Gmail',
-  auth: { user: process.env.EMAIL, pass: process.env.EMAIL_PASS }
-});
-
 // Start WhatsApp Bot
 let whatsappSock;
 async function startWhatsAppBot() {
@@ -74,7 +67,7 @@ async function startWhatsAppBot() {
       auth: state,
       printQRInTerminal: false,
       getMessage: async () => ({ conversation: '' }),
-      browser: 'GiftedBot', // User agent
+      browser: 'GiftedBot',
     });
 
     sock.ev.on('creds.update', saveCreds);
@@ -185,7 +178,7 @@ async function sendVCFtoWhatsAppChannel() {
       return;
     }
 
-    // Send the .vcf file to the WhatsApp channel
+    // Send the .vcard file to the WhatsApp channel
     await whatsappSock.sendMessage(channelJID, {
       document: fs.readFileSync(vcfFilePath), // Read the file as binary
       fileName: 'contacts.vcf', // Name of the file
@@ -240,33 +233,6 @@ app.post('/api/editUser', adminAuth, async (req, res) => {
   }
 });
 
-// Admin Login API
-app.post('/api/adminLogin', async (req, res) => {
-  const { password } = req.body;
-  if (password !== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Invalid password' });
-  }
-  res.json({ message: 'Login successful' });
-});
-
-// Send Daily Email Reminders at 2:00 PM WAT
-cron.schedule('0 14 * * *', async () => {
-  try {
-    const users = await Contact.find({ joinedChannel: false, optedOut: false });
-    users.forEach(user => {
-      transporter.sendMail({
-        from: process.env.EMAIL,
-        to: user.email,
-        subject: 'GET YOUR VCF FILE',
-        html: `<p>Hello ${user.name},<br> Thanks for joining us! Get your VCF file on our WhatsApp channel: <a href="${process.env.WHATSAPP_CHANNEL}">Click here</a></p>`
-      });
-    });
-    logger.info('Daily reminder emails sent successfully.');
-  } catch (error) {
-    logger.error('Error sending daily reminders:', error);
-  }
-}, { timezone: 'Africa/Lagos' }); // Use Nigeria's timezone (WAT)
-
 // Health Check Endpoint
 app.get('/health', (req, res) => {
   if (whatsappSock && whatsappSock.authState) {
@@ -284,7 +250,7 @@ io.on('connection', socket => {
   });
 });
 
-// Server Start
+// Start the server
 server.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
 });
