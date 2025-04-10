@@ -1,179 +1,280 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsApp Contact Gain</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Contact Gain</title>
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+        html, body {
+            height: 100%;
+            font-family: 'Poppins', Arial, sans-serif;
+            color: #fff;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
 
-  <style>
-    /* General Styles */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+        body {
+            background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed;
+            background-size: cover;
+            position: relative;
+        }
 
-    html, body {
-      height: 100%;
-      font-family: 'Poppins', Arial, sans-serif;
-      color: #fff;
-      line-height: 1.6;
-      overflow-x: hidden;
-    }
+        /* Gradient Overlay */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8));
+            z-index: -1;
+        }
 
-    body {
-      background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed;
-      background-size: cover;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+        .container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 40px 30px;
+            background: rgba(255, 255, 255, 0.8); /* Reduced opacity for transparency */
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            animation: fadeIn 1s ease-in-out;
+        }
 
-    .container {
-      text-align: center;
-      padding: 2rem;
-      background-color: rgba(0, 0, 0, 0.7);
-      border-radius: 10px;
-      width: 100%;
-      max-width: 400px;
-    }
+        .logo {
+            width: 120px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            animation: float 3s ease-in-out infinite;
+        }
 
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 0 0 15px;
+            color: #4CAF50;
+        }
 
-    input[type="text"], input[type="email"], input[type="tel"] {
-      width: 100%;
-      padding: 0.8rem;
-      margin: 0.5rem 0;
-      border: none;
-      border-radius: 5px;
-      font-size: 1rem;
-      background-color: #f4f4f4;
-      color: #333;
-    }
+        p {
+            font-size: 1rem;
+            margin: 5px 0;
+            color: #333; /* Default text color for paragraphs */
+        }
 
-    button {
-      width: 100%;
-      padding: 1rem;
-      border: none;
-      border-radius: 5px;
-      font-size: 1rem;
-      background-color: #007bff;
-      color: #fff;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
+        /* Specific Styling for "Enter your details" text */
+        .details-text {
+            color: #000; /* Black text */
+        }
 
-    button:hover {
-      background-color: #0056b3;
-    }
+        form {
+            margin-top: 20px;
+        }
 
-    p {
-      margin-top: 1rem;
-      font-size: 1rem;
-    }
+        input[type="text"],
+        input[type="email"] {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Poppins', Arial, sans-serif;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
 
-    .spinner {
-      display: none;
-      margin-top: 1rem;
-      border: 4px solid rgba(255, 255, 255, 0.3);
-      border-top: 4px solid #007bff;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      animation: spin 1s linear infinite;
-    }
+        input[type="text"]:focus,
+        input[type="email"]:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+            outline: none;
+        }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
+        button {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        #message {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: red;
+        }
+
+        #confirmationMessage {
+            margin-top: 15px;
+            font-size: 1rem;
+            color: green;
+        }
+
+        #referralLinkDisplay button {
+            display: inline-block;
+            margin-top: 20px;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        #referralLinkDisplay button:hover {
+            background: linear-gradient(135deg, #0056b3, #007bff);
+            transform: scale(1.05);
+        }
+
+        #referralLinkDisplay button:active {
+            transform: scale(0.98);
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 15px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Fade-In Animation */
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Floating Animation for Logo */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Register for WhatsApp Contact Gain</h1>
-    <form id="registerForm">
-      <input type="text" id="name" placeholder="Your Name" required>
-      <input type="tel" id="phone" placeholder="Phone Number (e.g., +1234567890)" required>
-      <input type="email" id="email" placeholder="Email Address" required>
-      <button type="submit">Register</button>
-      <div class="spinner"></div>
-      <p id="message"></p>
-    </form>
-  </div>
+    <div class="container">
+        <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo" class="logo">
+        <h1>Join & Grow Your WhatsApp Contacts</h1>
+        <p class="details-text">Enter your details to get started:</p>
+        <form id="registerForm" aria-live="polite">
+            <input type="text" id="name" placeholder="Your Name" required aria-label="Your Name">
+            <input type="email" id="email" placeholder="Email Address" required aria-label="Email Address">
+            <input type="text" id="whatsappNumber" placeholder="WhatsApp Number (with country code)" required aria-label="WhatsApp Number">
+            <button type="submit" aria-label="Join Now Button">Join Now</button>
+            <div class="spinner" id="spinner"></div>
+        </form>
+        <p id="message" aria-live="assertive"></p>
+        <div id="confirmationMessage" aria-live="polite"></div>
+        <div id="referralLinkDisplay"></div>
+    </div>
+    <footer>
+        <p>Powered by <strong>Septorch</strong></p>
+    </footer>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-  <script>
-    // Select elements
-    const form = document.getElementById('registerForm');
-    const spinner = document.querySelector('.spinner');
-    const messageElement = document.getElementById('message');
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const whatsappNumber = document.getElementById('whatsappNumber').value.trim();
+            const messageElement = document.getElementById('message');
+            const confirmationMessageElement = document.getElementById('confirmationMessage');
+            const referralLinkDisplay = document.getElementById('referralLinkDisplay');
+            const spinner = document.getElementById('spinner');
 
-    // Handle form submission
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault(); // Prevent default form submission
+            // Clear previous messages
+            messageElement.innerText = "";
+            confirmationMessageElement.innerText = "";
+            referralLinkDisplay.innerHTML = "";
 
-      // Get form values
-      const name = document.getElementById('name').value.trim();
-      const phone = document.getElementById('phone').value.trim();
-      const email = document.getElementById('email').value.trim();
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                messageElement.innerText = "Please enter a valid email address.";
+                return;
+            }
 
-      // Validate inputs
-      if (!name || !phone || !email) {
-        messageElement.innerText = 'All fields are required.';
-        return;
-      }
+            // Validate phone number: Must include a country code (starts with + or has at least 10 digits)
+            const phoneRegex = /^\+?[1-9]\d{9,}$/;
+            if (!phoneRegex.test(whatsappNumber)) {
+                messageElement.innerText = "Please enter a valid phone number with the country code (e.g., +1234567890).";
+                return;
+            }
 
-      // Show spinner
-      spinner.style.display = 'block';
-      messageElement.innerText = ''; // Clear previous messages
+            // Show spinner
+            spinner.style.display = 'block';
 
-      try {
-        // Check if phone number is valid and registered on WhatsApp
-        const response = await fetch('/api/checkPhoneNumber', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone })
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, phone: whatsappNumber })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    confirmationMessageElement.innerHTML = `
+                        <p>Thank you for joining! Your VCF file will be sent to our WhatsApp channel and your email shortly.</p>
+                        <p><strong>Note:</strong> The email system is temporary and may not be available indefinitely.</p>
+                    `;
+                    referralLinkDisplay.innerHTML = `
+                        <button onclick="window.open('https://whatsapp.com/channel/0029Vb1ydGk8qIzkvps0nZ04', '_blank')">Join Our WhatsApp Channel</button>
+                    `;
+                } else {
+                    messageElement.innerText = data.error || "Failed to register. Please try again later.";
+                }
+            } catch (error) {
+                messageElement.innerText = "An error occurred. Please try again later.";
+            } finally {
+                // Hide spinner
+                spinner.style.display = 'none';
+            }
         });
-
-        const result = await response.json();
-
-        if (result.error) {
-          throw new Error(result.error);
-        }
-
-        if (!result.isRegistered) {
-          messageElement.innerText = 'Phone number is not registered on WhatsApp.';
-          spinner.style.display = 'none'; // Hide spinner
-          return;
-        }
-
-        // Proceed with registration
-        const registerResponse = await fetch('/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, phone, email })
-        });
-
-        const registerResult = await registerResponse.json();
-
-        if (registerResult.message) {
-          messageElement.innerText = registerResult.message;
-        } else {
-          messageElement.innerText = 'Failed to register. Please try again later.';
-        }
-      } catch (error) {
-        messageElement.innerText = error.message || 'An error occurred. Please try again later.';
-      } finally {
-        // Hide spinner after processing
-        spinner.style.display = 'none';
-      }
-    });
-  </script>
+    </script>
 </body>
 </html>
