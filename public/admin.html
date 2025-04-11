@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
+    /* Existing styles */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -18,10 +20,6 @@
       color: white;
       text-align: center;
       padding: 20px 0;
-    }
-    header img {
-      width: 100px;
-      margin-bottom: 10px;
     }
     main {
       padding: 20px;
@@ -94,6 +92,37 @@
       color: #fff;
       text-decoration: underline;
     }
+    /* New Styles */
+    .loading-spinner {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #4CAF50;
+      border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      animation: spin 1s linear infinite;
+      margin: auto;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .success-message, .error-message {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      display: none;
+    }
+    .success-message {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
   </style>
 </head>
 <body>
@@ -162,6 +191,9 @@
         <button type="submit" aria-label="Schedule Announcement Button">Schedule Announcement</button>
         <button type="reset" aria-label="Reset Announcement Form">Reset</button>
       </form>
+      <div id="loadingSpinner" class="loading-spinner"></div>
+      <div id="successMessage" class="success-message"></div>
+      <div id="errorMessage" class="error-message"></div>
     </section>
   </main>
   <footer>
@@ -175,6 +207,9 @@
     const loginError = document.getElementById('loginError');
     const authSection = document.getElementById('authSection');
     const adminDashboard = document.getElementById('adminDashboard');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const successMessage = document.getElementById('successMessage');
+    const errorMessage = document.getElementById('errorMessage');
 
     // Handle WhatsApp bot status updates
     socket.on('whatsappStatus', (status) => {
@@ -223,29 +258,19 @@
     window.openWhatsAppChat = (name, phone) => {
       const messageTemplate = `
         Hey [Name]! I’m really glad you joined SEPTORCH Contact Gain.
-
         You’re one of the very first people to try this out—and I truly appreciate it.
         Your early support is helping something big grow!
-
         Here’s how it works:
-
         Every day, I send you a contact list (VCF file) to your email – check your inbox or spam folder.
-
         Save the contacts and start connecting to grow your WhatsApp reach!
-
-
         But here’s the key part:
         The more people that join, the bigger the contact list gets.
         So if you want to get even more valuable contacts daily, please share this link with your friends and groups:
         https://septorch-contact-gain-gen0.onrender.com/
-
         Every person you bring helps the whole network grow—including your own reach.
-
         Thanks again for being one of the first. Let’s build this together!
-
         > Septorch
       `.trim();
-
       const personalizedMessage = encodeURIComponent(messageTemplate.replace(/\[Name\]/g, name || 'User'));
       const whatsappUrl = `https://wa.me/${phone}?text=${personalizedMessage}`;
       window.open(whatsappUrl, '_blank');
@@ -253,6 +278,7 @@
 
     // Load Users
     document.getElementById('loadUsersBtn').addEventListener('click', () => {
+      loadingSpinner.style.display = 'block';
       fetch('/api/getUsers', {
         method: 'GET',
         headers: { 'x-admin-token': adminPassword.value }
@@ -270,19 +296,29 @@
             <td>${user.email}</td>
             <td>${user.joinedChannel ? 'Yes' : 'No'}</td>
             <td>
-              <button onclick="openWhatsAppChat('${user.name}', '${user.phone}')" title="Send Message on WhatsApp">Message</button>
-              <button onclick="confirmRemoveUser('${user.phone}')" title="Remove User">Remove</button>
+              <button onclick="openWhatsAppChat('${user.name}', '${user.phone}')" title="Send Message on WhatsApp"><i class="fas fa-comment"></i> Message</button>
+              <button onclick="confirmRemoveUser('${user.phone}')" title="Remove User"><i class="fas fa-trash"></i> Remove</button>
             </td>
           `;
           userTableBody.appendChild(row);
         });
+        loadingSpinner.style.display = 'none';
+        successMessage.textContent = 'Users loaded successfully.';
+        successMessage.style.display = 'block';
+        setTimeout(() => successMessage.style.display = 'none', 3000);
       })
-      .catch(() => alert('Error loading users.'));
+      .catch(() => {
+        loadingSpinner.style.display = 'none';
+        errorMessage.textContent = 'Error loading users.';
+        errorMessage.style.display = 'block';
+        setTimeout(() => errorMessage.style.display = 'none', 3000);
+      });
     });
 
     // Remove User with Confirmation
     window.confirmRemoveUser = (phone) => {
       if (confirm('Are you sure you want to remove this user?')) {
+        loadingSpinner.style.display = 'block';
         fetch('/api/removeUser', {
           method: 'POST',
           headers: { 
@@ -293,32 +329,51 @@
         })
         .then(res => res.json())
         .then(data => {
-          alert(data.message);
+          loadingSpinner.style.display = 'none';
+          successMessage.textContent = data.message;
+          successMessage.style.display = 'block';
+          setTimeout(() => successMessage.style.display = 'none', 3000);
           document.getElementById('loadUsersBtn').click();
         })
-        .catch(() => alert('Error removing user.'));
+        .catch(() => {
+          loadingSpinner.style.display = 'none';
+          errorMessage.textContent = 'Error removing user.';
+          errorMessage.style.display = 'block';
+          setTimeout(() => errorMessage.style.display = 'none', 3000);
+        });
       }
     };
 
     // Export CSV
     document.getElementById('exportCSVBtn').addEventListener('click', () => {
+      loadingSpinner.style.display = 'block';
       fetch('/api/exportUsers', {
         method: 'GET',
         headers: { 'x-admin-token': adminPassword.value }
       })
       .then(res => res.blob())
       .then(blob => {
+        loadingSpinner.style.display = 'none';
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = 'users.csv';
         link.click();
+        successMessage.textContent = 'CSV exported successfully.';
+        successMessage.style.display = 'block';
+        setTimeout(() => successMessage.style.display = 'none', 3000);
       })
-      .catch(() => alert('Error exporting CSV.'));
+      .catch(() => {
+        loadingSpinner.style.display = 'none';
+        errorMessage.textContent = 'Error exporting CSV.';
+        errorMessage.style.display = 'block';
+        setTimeout(() => errorMessage.style.display = 'none', 3000);
+      });
     });
 
     // Upload VCF
     document.getElementById('vcfForm').addEventListener('submit', (e) => {
       e.preventDefault();
+      loadingSpinner.style.display = 'block';
       const formData = new FormData();
       formData.append('vcfFile', document.getElementById('vcfFile').files[0]);
       fetch('/api/uploadVCF', {
@@ -327,13 +382,24 @@
         body: formData
       })
       .then(res => res.json())
-      .then(data => alert(data.message))
-      .catch(() => alert('Error uploading VCF file.'));
+      .then(data => {
+        loadingSpinner.style.display = 'none';
+        successMessage.textContent = data.message;
+        successMessage.style.display = 'block';
+        setTimeout(() => successMessage.style.display = 'none', 3000);
+      })
+      .catch(() => {
+        loadingSpinner.style.display = 'none';
+        errorMessage.textContent = 'Error uploading VCF file.';
+        errorMessage.style.display = 'block';
+        setTimeout(() => errorMessage.style.display = 'none', 3000);
+      });
     });
 
     // Schedule Announcement
     document.getElementById('announcementForm').addEventListener('submit', (e) => {
       e.preventDefault();
+      loadingSpinner.style.display = 'block';
       const message = document.getElementById('announcementMessage').value;
       const dateTime = document.getElementById('announcementDate').value;
       fetch('/api/scheduleAnnouncement', {
@@ -345,8 +411,18 @@
         body: JSON.stringify({ message, dateTime })
       })
       .then(res => res.json())
-      .then(data => alert(data.message))
-      .catch(() => alert('Error scheduling announcement.'));
+      .then(data => {
+        loadingSpinner.style.display = 'none';
+        successMessage.textContent = data.message;
+        successMessage.style.display = 'block';
+        setTimeout(() => successMessage.style.display = 'none', 3000);
+      })
+      .catch(() => {
+        loadingSpinner.style.display = 'none';
+        errorMessage.textContent = 'Error scheduling announcement.';
+        errorMessage.style.display = 'block';
+        setTimeout(() => errorMessage.style.display = 'none', 3000);
+      });
     });
   </script>
 </body>
