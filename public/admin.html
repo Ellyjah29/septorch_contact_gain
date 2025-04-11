@@ -4,35 +4,51 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     /* General Styles */
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Poppins', Arial, sans-serif;
       margin: 0;
       padding: 0;
       background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed;
-      background-size: cover; /* Ensures the image covers the entire background */
-      color: #333;
+      background-size: cover;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
     header {
-      background: rgba(0, 0, 0, 0.7); /* Semi-transparent black overlay */
+      background: rgba(0, 0, 0, 0.7);
       color: white;
       text-align: center;
       padding: 20px 0;
+      position: relative;
+      z-index: 1;
     }
     header img {
       width: 100px;
       margin-bottom: 10px;
+      border-radius: 50%;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
     main {
+      flex: 1;
       padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     section {
-      background: rgba(255, 255, 255, 0.9); /* Semi-transparent white background */
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
       margin-bottom: 20px;
       padding: 20px;
+      width: 100%;
+      max-width: 800px;
+      color: #fff;
     }
     h2, h3 {
       margin-top: 0;
@@ -45,20 +61,23 @@
     }
     input[type="password"], input[type="file"], textarea, input[type="datetime-local"] {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       margin-bottom: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
       font-size: 1rem;
     }
     button {
       background: #4CAF50;
       color: white;
       border: none;
-      padding: 10px 15px;
-      border-radius: 4px;
+      padding: 12px 18px;
+      border-radius: 8px;
       cursor: pointer;
       font-size: 1rem;
+      transition: background 0.3s ease;
     }
     button:hover {
       background: #45a049;
@@ -71,13 +90,13 @@
     th, td {
       padding: 10px;
       text-align: left;
-      border-bottom: 1px solid #ddd;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     }
     th {
-      background: #f2f2f2;
+      background: rgba(255, 255, 255, 0.1);
     }
     tr:hover {
-      background-color: #f1f1f1;
+      background-color: rgba(255, 255, 255, 0.1);
     }
     .hidden {
       display: none;
@@ -85,10 +104,10 @@
     footer {
       text-align: center;
       padding: 10px 0;
-      background: rgba(0, 0, 0, 0.7); /* Semi-transparent black overlay */
+      background: rgba(0, 0, 0, 0.7);
       color: white;
-      position: fixed;
-      bottom: 0;
+      position: relative;
+      z-index: 1;
       width: 100%;
     }
     footer a {
@@ -105,12 +124,49 @@
         padding: 15px;
       }
       button {
-        padding: 8px 12px;
+        padding: 10px 15px;
         font-size: 0.9rem;
       }
       table {
         font-size: 0.9rem;
       }
+      table th, table td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    /* Loading Spinner */
+    .loading-spinner {
+      border: 5px solid rgba(255, 255, 255, 0.3);
+      border-top: 5px solid #4CAF50;
+      border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      animation: spin 1s linear infinite;
+      margin: auto;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Messages */
+    .success-message, .error-message {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      display: none;
+    }
+    .success-message {
+      background: rgba(76, 175, 80, 0.8);
+      color: #fff;
+    }
+    .error-message {
+      background: rgba(244, 67, 54, 0.8);
+      color: #fff;
     }
   </style>
 </head>
@@ -148,7 +204,7 @@
       <table id="userTable">
         <thead>
           <tr>
-            <th>#</th> <!-- Numbering -->
+            <th>#</th>
             <th>Name</th>
             <th>Phone</th>
             <th>Email</th>
@@ -157,7 +213,6 @@
           </tr>
         </thead>
         <tbody id="userTableBody">
-          <!-- User rows will go here -->
         </tbody>
       </table>
       <button id="exportCSVBtn" aria-label="Export CSV Button">Export User Data as CSV</button>
@@ -180,6 +235,9 @@
         <button type="submit" aria-label="Schedule Announcement Button">Schedule Announcement</button>
         <button type="reset" aria-label="Reset Announcement Form">Reset</button>
       </form>
+      <div id="loadingSpinner" class="loading-spinner"></div>
+      <div id="successMessage" class="success-message"></div>
+      <div id="errorMessage" class="error-message"></div>
     </section>
   </main>
   <footer>
@@ -193,6 +251,9 @@
     const loginError = document.getElementById('loginError');
     const authSection = document.getElementById('authSection');
     const adminDashboard = document.getElementById('adminDashboard');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const successMessage = document.getElementById('successMessage');
+    const errorMessage = document.getElementById('errorMessage');
 
     // Handle WhatsApp bot status updates
     socket.on('whatsappStatus', (status) => {
@@ -200,7 +261,7 @@
       whatsappStatus.textContent = status === 'connected' 
         ? 'WhatsApp Bot is connected' 
         : 'WhatsApp Bot is disconnected';
-      whatsappStatus.style.color = status === 'connected' ? 'green' : 'red';
+      whatsappStatus.style.color = status === 'connected' ? '#4CAF50' : '#FF4444';
     });
 
     // Handle QR Code updates
@@ -261,6 +322,7 @@
 
     // Load Users
     document.getElementById('loadUsersBtn').addEventListener('click', () => {
+      loadingSpinner.style.display = 'block';
       fetch('/api/getUsers', {
         method: 'GET',
         headers: { 'x-admin-token': adminPassword.value }
@@ -272,25 +334,35 @@
         users.forEach((user, index) => {
           const row = document.createElement('tr');
           row.innerHTML = `
-            <td>${index + 1}</td> <!-- Numbering -->
+            <td>${index + 1}</td>
             <td>${user.name}</td>
             <td>${user.phone}</td>
             <td>${user.email}</td>
             <td>${user.joinedChannel ? 'Yes' : 'No'}</td>
             <td>
-              <button onclick="openWhatsAppChat('${user.name}', '${user.phone}')" title="Send Message on WhatsApp">Message</button>
-              <button onclick="confirmRemoveUser('${user.phone}')" title="Remove User">Remove</button>
+              <button onclick="openWhatsAppChat('${user.name}', '${user.phone}')" title="Send Message on WhatsApp"><i class="fas fa-comment"></i> Message</button>
+              <button onclick="confirmRemoveUser('${user.phone}')" title="Remove User"><i class="fas fa-trash"></i> Remove</button>
             </td>
           `;
           userTableBody.appendChild(row);
         });
+        loadingSpinner.style.display = 'none';
+        successMessage.textContent = 'Users loaded successfully.';
+        successMessage.style.display = 'block';
+        setTimeout(() => successMessage.style.display = 'none', 3000);
       })
-      .catch(() => alert('Error loading users.'));
+      .catch(() => {
+        loadingSpinner.style.display = 'none';
+        errorMessage.textContent = 'Error loading users.';
+        errorMessage.style.display = 'block';
+        setTimeout(() => errorMessage.style.display = 'none', 3000);
+      });
     });
 
     // Remove User with Confirmation
     window.confirmRemoveUser = (phone) => {
       if (confirm('Are you sure you want to remove this user?')) {
+        loadingSpinner.style.display = 'block';
         fetch('/api/removeUser', {
           method: 'POST',
           headers: { 
@@ -301,32 +373,51 @@
         })
         .then(res => res.json())
         .then(data => {
-          alert(data.message);
+          loadingSpinner.style.display = 'none';
+          successMessage.textContent = data.message;
+          successMessage.style.display = 'block';
+          setTimeout(() => successMessage.style.display = 'none', 3000);
           document.getElementById('loadUsersBtn').click();
         })
-        .catch(() => alert('Error removing user.'));
+        .catch(() => {
+          loadingSpinner.style.display = 'none';
+          errorMessage.textContent = 'Error removing user.';
+          errorMessage.style.display = 'block';
+          setTimeout(() => errorMessage.style.display = 'none', 3000);
+        });
       }
     };
 
     // Export CSV
     document.getElementById('exportCSVBtn').addEventListener('click', () => {
+      loadingSpinner.style.display = 'block';
       fetch('/api/exportUsers', {
         method: 'GET',
         headers: { 'x-admin-token': adminPassword.value }
       })
       .then(res => res.blob())
       .then(blob => {
+        loadingSpinner.style.display = 'none';
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = 'users.csv';
         link.click();
+        successMessage.textContent = 'CSV exported successfully.';
+        successMessage.style.display = 'block';
+        setTimeout(() => successMessage.style.display = 'none', 3000);
       })
-      .catch(() => alert('Error exporting CSV.'));
+      .catch(() => {
+        loadingSpinner.style.display = 'none';
+        errorMessage.textContent = 'Error exporting CSV.';
+        errorMessage.style.display = 'block';
+        setTimeout(() => errorMessage.style.display = 'none', 3000);
+      });
     });
 
     // Upload VCF
     document.getElementById('vcfForm').addEventListener('submit', (e) => {
       e.preventDefault();
+      loadingSpinner.style.display = 'block';
       const formData = new FormData();
       formData.append('vcfFile', document.getElementById('vcfFile').files[0]);
       fetch('/api/uploadVCF', {
@@ -335,13 +426,24 @@
         body: formData
       })
       .then(res => res.json())
-      .then(data => alert(data.message))
-      .catch(() => alert('Error uploading VCF file.'));
+      .then(data => {
+        loadingSpinner.style.display = 'none';
+        successMessage.textContent = data.message;
+        successMessage.style.display = 'block';
+        setTimeout(() => successMessage.style.display = 'none', 3000);
+      })
+      .catch(() => {
+        loadingSpinner.style.display = 'none';
+        errorMessage.textContent = 'Error uploading VCF file.';
+        errorMessage.style.display = 'block';
+        setTimeout(() => errorMessage.style.display = 'none', 3000);
+      });
     });
 
     // Schedule Announcement
     document.getElementById('announcementForm').addEventListener('submit', (e) => {
       e.preventDefault();
+      loadingSpinner.style.display = 'block';
       const message = document.getElementById('announcementMessage').value;
       const dateTime = document.getElementById('announcementDate').value;
       fetch('/api/scheduleAnnouncement', {
@@ -353,8 +455,18 @@
         body: JSON.stringify({ message, dateTime })
       })
       .then(res => res.json())
-      .then(data => alert(data.message))
-      .catch(() => alert('Error scheduling announcement.'));
+      .then(data => {
+        loadingSpinner.style.display = 'none';
+        successMessage.textContent = data.message;
+        successMessage.style.display = 'block';
+        setTimeout(() => successMessage.style.display = 'none', 3000);
+      })
+      .catch(() => {
+        loadingSpinner.style.display = 'none';
+        errorMessage.textContent = 'Error scheduling announcement.';
+        errorMessage.style.display = 'block';
+        setTimeout(() => errorMessage.style.display = 'none', 3000);
+      });
     });
   </script>
 </body>
