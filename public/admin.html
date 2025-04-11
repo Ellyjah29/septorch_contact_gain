@@ -140,7 +140,7 @@
       <table id="userTable">
         <thead>
           <tr>
-            <th>#</th>
+            <th>#</th> <!-- New column for numbering -->
             <th>Name</th>
             <th>Phone</th>
             <th>Email</th>
@@ -153,6 +153,25 @@
         </tbody>
       </table>
       <button id="exportCSVBtn" aria-label="Export CSV Button">Export User Data as CSV</button>
+      <hr>
+      <!-- VCF File Upload -->
+      <h3>Upload Custom VCF</h3>
+      <form id="vcfForm" enctype="multipart/form-data">
+        <input type="file" id="vcfFile" name="vcfFile" accept=".vcf" required aria-label="VCF File Input">
+        <button type="submit" aria-label="Upload VCF Button">Upload VCF</button>
+        <button type="reset" aria-label="Reset VCF Form">Reset</button>
+      </form>
+      <hr>
+      <!-- Announcements -->
+      <h3>Schedule WhatsApp Announcement</h3>
+      <form id="announcementForm">
+        <label for="announcementMessage">Message:</label>
+        <textarea id="announcementMessage" required aria-label="Announcement Message"></textarea>
+        <label for="announcementDate">Schedule Date/Time:</label>
+        <input type="datetime-local" id="announcementDate" required aria-label="Announcement Date and Time">
+        <button type="submit" aria-label="Schedule Announcement Button">Schedule Announcement</button>
+        <button type="reset" aria-label="Reset Announcement Form">Reset</button>
+      </form>
     </section>
   </main>
   <footer>
@@ -174,6 +193,20 @@
         ? 'WhatsApp Bot is connected' 
         : 'WhatsApp Bot is disconnected';
       whatsappStatus.style.color = status === 'connected' ? 'green' : 'red';
+    });
+
+    // Handle QR Code updates
+    socket.on('whatsappQR', (qrCodeData) => {
+      const qrCodeElement = document.getElementById('qrCode');
+      const qrStatus = document.getElementById('qrStatus');
+      if (qrCodeData) {
+        qrCodeElement.src = qrCodeData;
+        qrCodeElement.classList.remove('hidden');
+        qrStatus.textContent = 'Scan the QR code with WhatsApp.';
+      } else {
+        qrCodeElement.classList.add('hidden');
+        qrStatus.textContent = 'QR Code not available.';
+      }
     });
 
     // Admin Login
@@ -207,15 +240,17 @@
         const userTableBody = document.getElementById('userTableBody');
         userTableBody.innerHTML = '';
         users.forEach((user, index) => {
+          const whatsappUrl = `https://wa.me/${user.phone}`;
           const row = document.createElement('tr');
           row.innerHTML = `
-            <td>${index + 1}</td>
+            <td>${index + 1}</td> <!-- Numbering -->
             <td>${user.name}</td>
             <td>${user.phone}</td>
             <td>${user.email}</td>
             <td>${user.joinedChannel ? 'Yes' : 'No'}</td>
             <td>
-              <button onclick="removeUser('${user.phone}')" title="Remove User">Remove</button>
+              <button onclick="window.open('${whatsappUrl}', '_blank')" title="Message on WhatsApp">Message</button>
+              <button onclick="confirmRemoveUser('${user.phone}')" title="Remove User">Remove</button>
             </td>
           `;
           userTableBody.appendChild(row);
@@ -225,7 +260,7 @@
     });
 
     // Remove User with Confirmation
-    window.removeUser = (phone) => {
+    window.confirmRemoveUser = (phone) => {
       if (confirm('Are you sure you want to remove this user?')) {
         fetch('/api/removeUser', {
           method: 'POST',
@@ -258,6 +293,39 @@
         link.click();
       })
       .catch(() => alert('Error exporting CSV.'));
+    });
+
+    // Upload VCF
+    document.getElementById('vcfForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append('vcfFile', document.getElementById('vcfFile').files[0]);
+      fetch('/api/uploadVCF', {
+        method: 'POST',
+        headers: { 'x-admin-token': adminPassword.value },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => alert(data.message))
+      .catch(() => alert('Error uploading VCF file.'));
+    });
+
+    // Schedule Announcement
+    document.getElementById('announcementForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const message = document.getElementById('announcementMessage').value;
+      const dateTime = document.getElementById('announcementDate').value;
+      fetch('/api/scheduleAnnouncement', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-token': adminPassword.value 
+        },
+        body: JSON.stringify({ message, dateTime })
+      })
+      .then(res => res.json())
+      .then(data => alert(data.message))
+      .catch(() => alert('Error scheduling announcement.'));
     });
   </script>
 </body>
