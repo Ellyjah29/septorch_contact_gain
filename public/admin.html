@@ -59,7 +59,7 @@
       margin: 10px 0 5px;
       font-weight: bold;
     }
-    input[type="password"], input[type="file"], textarea, input[type="datetime-local"] {
+    input[type="password"], input[type="file"], textarea, input[type="datetime-local"], input[type="text"] {
       width: 100%;
       padding: 12px;
       margin-bottom: 10px;
@@ -130,11 +130,6 @@
       table {
         font-size: 0.9rem;
       }
-      table th, table td {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
     }
 
     /* Loading Spinner */
@@ -197,6 +192,13 @@
         <img id="qrCode" class="hidden" alt="QR Code">
         <p id="qrStatus">Waiting for QR Code...</p>
       </div>
+      <hr>
+      <!-- Pairing Section -->
+      <h3>Pair with Phone Number</h3>
+      <label for="pairingPhone">Enter Phone Number:</label>
+      <input type="text" id="pairingPhone" placeholder="E.g., +1234567890" aria-label="Phone Number Input">
+      <button onclick="startPairing()" aria-label="Start Pairing Button">Start Pairing</button>
+      <p id="pairingCodeStatus"></p>
       <hr>
       <!-- User Management -->
       <h3>User Management</h3>
@@ -278,6 +280,13 @@
       }
     });
 
+    // Listen for Pairing Code from backend
+    socket.on('pairingCode', (code) => {
+      const pairingStatus = document.getElementById('pairingCodeStatus');
+      pairingStatus.textContent = `Pairing Code: ${code}`;
+      pairingStatus.style.color = 'blue';
+    });
+
     // Admin Login
     loginBtn.addEventListener('click', () => {
       const password = adminPassword.value;
@@ -319,6 +328,32 @@
       const whatsappUrl = `https://wa.me/${phone}?text=${personalizedMessage}`;
       window.open(whatsappUrl, '_blank');
     };
+
+    // Trigger Pairing with Phone Number
+    function startPairing() {
+      const phone = document.getElementById('pairingPhone').value;
+      const token = adminPassword.value;
+      if (!phone) return alert('Please enter a valid phone number');
+      loadingSpinner.style.display = 'block';
+      fetch('/api/startPairing', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': token
+        },
+        body: JSON.stringify({ phone })
+      })
+      .then(res => res.json())
+      .then(data => {
+        loadingSpinner.style.display = 'none';
+        if (data.error) return alert(data.error);
+        alert(data.message || 'Pairing started. Check below.');
+      })
+      .catch(() => {
+        loadingSpinner.style.display = 'none';
+        alert('Error starting pairing.');
+      });
+    }
 
     // Load Users
     document.getElementById('loadUsersBtn').addEventListener('click', () => {
