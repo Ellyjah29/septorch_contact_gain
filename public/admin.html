@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel</title>
   <style>
-    /* General Styles */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -91,25 +90,9 @@
       bottom: 0;
       width: 100%;
     }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-      header img {
-        width: 80px;
-      }
-      main {
-        padding: 10px;
-      }
-      section {
-        padding: 15px;
-      }
-      button {
-        font-size: 0.9rem;
-        padding: 8px 12px;
-      }
-      table {
-        font-size: 0.9rem;
-      }
+    footer a {
+      color: #fff;
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -147,7 +130,7 @@
       <table id="userTable">
         <thead>
           <tr>
-            <th>#</th> <!-- New column for numbering -->
+            <th>#</th> <!-- Numbering -->
             <th>Name</th>
             <th>Phone</th>
             <th>Email</th>
@@ -236,8 +219,8 @@
       .catch(() => loginError.classList.remove('hidden'));
     });
 
-    // Copy predefined message to clipboard
-    window.copyMessageToClipboard = (name, phone) => {
+    // Open WhatsApp chat with predefined message
+    window.openWhatsAppChat = (name, phone) => {
       const messageTemplate = `
         Hey [Name]! I’m really glad you joined SEPTORCH Contact Gain.
 
@@ -263,13 +246,9 @@
         > Septorch
       `.trim();
 
-      const personalizedMessage = messageTemplate.replace(/\[Name\]/g, name || 'User');
-      navigator.clipboard.writeText(personalizedMessage).then(() => {
-        alert(`Message copied to clipboard for ${name || 'User'} (${phone})`);
-      }).catch((err) => {
-        console.error('Failed to copy message:', err);
-        alert('Failed to copy message. Please try again.');
-      });
+      const personalizedMessage = encodeURIComponent(messageTemplate.replace(/\[Name\]/g, name || 'User'));
+      const whatsappUrl = `https://wa.me/${phone}?text=${personalizedMessage}`;
+      window.open(whatsappUrl, '_blank');
     };
 
     // Load Users
@@ -291,7 +270,7 @@
             <td>${user.email}</td>
             <td>${user.joinedChannel ? 'Yes' : 'No'}</td>
             <td>
-              <button onclick="copyMessageToClipboard('${user.name}', '${user.phone}')" title="Copy Message to Clipboard">Message</button>
+              <button onclick="openWhatsAppChat('${user.name}', '${user.phone}')" title="Send Message on WhatsApp">Message</button>
               <button onclick="confirmRemoveUser('${user.phone}')" title="Remove User">Remove</button>
             </td>
           `;
