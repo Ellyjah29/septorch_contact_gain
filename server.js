@@ -13,8 +13,6 @@ const { createObjectCsvWriter } = require('csv-writer');
 const QRCode = require('qrcode'); // For QR code generation
 const Pino = require('pino'); // For better logging
 const cron = require('node-cron');
-const bcrypt = require('bcrypt'); // For hashing passwords
-const Boom = require('@hapi/boom'); // For error handling
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
@@ -51,17 +49,12 @@ const ContactSchema = new mongoose.Schema({
 const Contact = mongoose.model('Contact', ContactSchema, 'contacts');
 
 // Admin Authentication Middleware
-let hashedAdminPassword;
-(async () => {
-  hashedAdminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
-})();
-
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 function adminAuth(req, res, next) {
   const token = req.headers['x-admin-token'];
   if (!token) return res.status(401).json({ error: 'Missing authentication token' });
-  bcrypt.compare(token, hashedAdminPassword)
-    .then(match => match ? next() : res.status(403).json({ error: 'Invalid admin password' }))
-    .catch(err => res.status(500).json({ error: 'Authentication failed', details: err.message }));
+  if (token !== ADMIN_PASSWORD) return res.status(403).json({ error: 'Invalid admin password' });
+  next();
 }
 
 // Email Setup
@@ -91,7 +84,7 @@ cron.schedule('0 14 * * *', async () => {
 });
 
 // Function to send the .vcf file to the WhatsApp channel
-async function sendVCFtoWhatsAppChannel(sock) {
+async function sendVCFtoWhatsAppChannel() {
   try {
     const channelJID = process.env.WHATSAPP_CHANNEL_JID; // WhatsApp channel JID from .env
     if (!channelJID) {
@@ -103,7 +96,7 @@ async function sendVCFtoWhatsAppChannel(sock) {
       logger.error('VCF file not found');
       return;
     }
-    await sock.sendMessage(channelJID, {
+    await whatsappSock.sendMessage(channelJID, {
       document: fs.readFileSync(vcfFilePath), // Read the file as binary
       fileName: 'contacts.vcf', // Name of the file
       mimetype: 'text/vcard', // MIME type for .vcf files
@@ -125,7 +118,7 @@ app.post('/api/register', async (req, res) => {
       await user.save();
       const vcfEntry = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL:${phone}\nEMAIL:${email}\nEND:VCARD\n`;
       fs.appendFileSync('contacts.vcf', vcfEntry);
-      await sendVCFtoWhatsAppChannel(whatsappSock);
+      await sendVCFtoWhatsAppChannel();
     }
     res.json({ message: 'Registered successfully' });
   } catch (error) {
@@ -162,13 +155,12 @@ app.post('/api/removeUser', adminAuth, async (req, res) => {
 
 app.post('/api/editUser', adminAuth, async (req, res) => {
   try {
-    const { oldPhone, newName, newPhone, newEmail } = req.body;
-    const user = await Contact.findOneAndUpdate(
-      { phone: oldPhone },
-      { name: newName, phone: newPhone, email: newEmail },
-      { new: true }
-    );
+    const { oldPhone, newName, newPhone } = req.body;
+    const user = await Contact.findOne({ phone: oldPhone });
     if (!user) return res.status(404).json({ error: 'User not found' });
+    user.name = newName;
+    user.phone = newPhone;
+    await user.save();
     res.json({ message: 'User updated successfully' });
   } catch (error) {
     logger.error('Error updating user:', error);
@@ -179,10 +171,8 @@ app.post('/api/editUser', adminAuth, async (req, res) => {
 // Admin Login API
 app.post('/api/adminLogin', async (req, res) => {
   const { password } = req.body;
-  if (!password) return res.status(400).json({ error: 'Password is required' });
-  bcrypt.compare(password, hashedAdminPassword)
-    .then(match => match ? res.json({ message: 'Login successful' }) : res.status(401).json({ error: 'Invalid password' }))
-    .catch(err => res.status(500).json({ error: 'Authentication failed', details: err.message }));
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Invalid password' });
+  res.json({ message: 'Login successful' });
 });
 
 // Upload Custom VCF File
