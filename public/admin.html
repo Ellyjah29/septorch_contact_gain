@@ -310,19 +310,17 @@
     // Open WhatsApp chat with predefined message
     window.openWhatsAppChat = (name, phone) => {
       const messageTemplate = `
-        Hey [Name]! I’m really glad you joined SEPTORCH Contact Gain.
-        You’re one of the very first people to try this out—and I truly appreciate it.
-        Your early support is helping something big grow!
-        Here’s how it works:
-        Every day, I send you a contact list (VCF file) to your email – check your inbox or spam folder.
-        Save the contacts and start connecting to grow your WhatsApp reach!
-        But here’s the key part:
-        The more people that join, the bigger the contact list gets.
-        So if you want to get even more valuable contacts daily, please share this link with your friends and groups:
-        https://septorch-contact-gain-gen0.onrender.com/
-        Every person you bring helps the whole network grow—including your own reach.
-        Thanks again for being one of the first. Let’s build this together!
-        > Septorch
+        Hey [Name]! please share this 
+        Need all our WhatsApp contacts in one place?
+
+Just use this link to submit your number, preferred name & email👇  
+🔗 https://septorch-contact-gain-gen0.onrender.com
+
+Every night, the full VCF file (with everyone’s numbers) will be sent straight to your email so you can download and save it instantly. 🧾💾
+
+Let’s grow together.📈  
+Repost on your status too 🙏
+        >Septorch
       `.trim();
       const personalizedMessage = encodeURIComponent(messageTemplate.replace(/\[Name\]/g, name || 'User'));
       const whatsappUrl = `https://wa.me/${phone}?text=${personalizedMessage}`;
