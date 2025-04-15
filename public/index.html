@@ -44,36 +44,38 @@
             max-width: 500px;
             margin: 50px auto;
             padding: 40px 30px;
-            background: rgba(255, 255, 255, 0.8); /* Reduced opacity for transparency */
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.9); /* Increased opacity for better readability */
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
             text-align: center;
             animation: fadeIn 1s ease-in-out;
         }
 
         .logo {
-            width: 120px;
+            width: 150px;
             margin-bottom: 20px;
-            border-radius: 10px;
+            border-radius: 15px;
             animation: float 3s ease-in-out infinite;
         }
 
         h1 {
             font-size: 2rem;
-            font-weight: 600;
+            font-weight: 700;
             margin: 0 0 15px;
             color: #4CAF50;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
         p {
             font-size: 1rem;
             margin: 5px 0;
-            color: #333; /* Default text color for paragraphs */
+            color: #333;
         }
 
-        /* Specific Styling for "Enter your details" text */
         .details-text {
-            color: #000; /* Black text */
+            color: #000;
+            font-weight: 600;
         }
 
         form {
@@ -83,10 +85,10 @@
         input[type="text"],
         input[type="email"] {
             width: 100%;
-            padding: 14px;
+            padding: 16px;
             margin: 10px 0;
             border: 2px solid #ddd;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 1rem;
             font-family: 'Poppins', Arial, sans-serif;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
@@ -95,7 +97,7 @@
         input[type="text"]:focus,
         input[type="email"]:focus {
             border-color: #4CAF50;
-            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+            box-shadow: 0 0 12px rgba(76, 175, 80, 0.6);
             outline: none;
         }
 
@@ -103,11 +105,11 @@
             background: linear-gradient(135deg, #4CAF50, #45a049);
             color: white;
             border: none;
-            padding: 14px 25px;
-            border-radius: 10px;
+            padding: 16px 30px;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 1rem;
-            font-weight: 500;
+            font-weight: 600;
             transition: transform 0.3s ease, background 0.3s ease;
         }
 
@@ -138,10 +140,10 @@
             background: linear-gradient(135deg, #007bff, #0056b3);
             color: white;
             border: none;
-            padding: 14px 25px;
-            border-radius: 10px;
+            padding: 16px 30px;
+            border-radius: 12px;
             font-size: 1rem;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
             transition: transform 0.3s ease, background 0.3s ease;
         }
@@ -158,12 +160,36 @@
         footer {
             text-align: center;
             padding: 10px 0;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.8);
             color: white;
             position: fixed;
             bottom: 0;
             width: 100%;
             font-size: 0.9rem;
+        }
+
+        /* WhatsApp Share Button */
+        .whatsapp-share-btn {
+            display: block;
+            margin: 20px auto;
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .whatsapp-share-btn:hover {
+            background: #128C7E;
+            transform: scale(1.05);
+        }
+
+        .whatsapp-share-btn:active {
+            transform: scale(0.98);
         }
 
         /* Loading Spinner */
@@ -199,9 +225,10 @@
 <body>
     <div class="container">
         <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo" class="logo">
-        <h1>Join & Grow Your WhatsApp Contacts</h1>
-        <p class="details-text">Enter your details to get started:</p>
-        <form id="registerForm" aria-live="polite">
+        <h1 id="heading">Join & Grow Your WhatsApp Contacts</h1>
+        <p class="details-text" id="detailsText">Enter your details to get started:</p>
+        <button class="whatsapp-share-btn" id="shareBtn">Share on WhatsApp</button>
+        <form id="registerForm" aria-live="polite" style="display: none;">
             <input type="text" id="name" placeholder="Your Name" required aria-label="Your Name">
             <input type="email" id="email" placeholder="Email Address" required aria-label="Email Address">
             <input type="text" id="whatsappNumber" placeholder="WhatsApp Number (with country code)" required aria-label="WhatsApp Number">
@@ -216,6 +243,43 @@
         <p>Powered by <strong>Septorch</strong></p>
     </footer>
     <script>
+        // Multi-language support based on browser language
+        function detectLanguage() {
+            const userLang = navigator.language || navigator.userLanguage; // Get browser language
+            const langCode = userLang.split('-')[0]; // Extract primary language code (e.g., "en" from "en-US")
+
+            const translations = {
+                en: {
+                    heading: "Join & Grow Your WhatsApp Contacts",
+                    detailsText: "Enter your details to get started:",
+                    shareBtn: "Share on WhatsApp"
+                },
+                es: {
+                    heading: "Únete y crece tus contactos de WhatsApp",
+                    detailsText: "Introduce tus datos para comenzar:",
+                    shareBtn: "Compartir en WhatsApp"
+                },
+                fr: {
+                    heading: "Rejoignez et développez vos contacts WhatsApp",
+                    detailsText: "Entrez vos coordonnées pour commencer :",
+                    shareBtn: "Partager sur WhatsApp"
+                }
+            };
+
+            const translation = translations[langCode] || translations['en']; // Default to English if not supported
+            document.getElementById('heading').innerText = translation.heading;
+            document.getElementById('detailsText').innerText = translation.detailsText;
+            document.getElementById('shareBtn').innerText = translation.shareBtn;
+        }
+
+        // WhatsApp share button functionality
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            const whatsappMessage = encodeURIComponent("Join our platform to grow your WhatsApp contacts! Click here: https://yourwebsite.com");
+            window.open(`https://wa.me/?text=${whatsappMessage}`, '_blank');
+            document.getElementById('registerForm').style.display = 'block';
+        });
+
+        // Form submission logic
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -275,6 +339,9 @@
                 spinner.style.display = 'none';
             }
         });
+
+        // Initialize language detection
+        detectLanguage();
     </script>
 </body>
 </html>
