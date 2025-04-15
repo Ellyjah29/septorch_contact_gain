@@ -226,7 +226,7 @@
     <div class="container">
         <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo" class="logo">
         <h1 id="heading">Join & Grow Your WhatsApp Contacts</h1>
-        <p class="details-text" id="detailsText">Enter your details to get started:</p>
+        <p class="details-text" id="detailsText">Share our contact link on WhatsApp to continue:</p>
         <button class="whatsapp-share-btn" id="shareBtn">Share on WhatsApp</button>
         <form id="registerForm" aria-live="polite" style="display: none;">
             <input type="text" id="name" placeholder="Your Name" required aria-label="Your Name">
@@ -243,40 +243,17 @@
         <p>Powered by <strong>Septorch</strong></p>
     </footer>
     <script>
-        // Multi-language support based on browser language
-        function detectLanguage() {
-            const userLang = navigator.language || navigator.userLanguage; // Get browser language
-            const langCode = userLang.split('-')[0]; // Extract primary language code (e.g., "en" from "en-US")
-
-            const translations = {
-                en: {
-                    heading: "Join & Grow Your WhatsApp Contacts",
-                    detailsText: "Enter your details to get started:",
-                    shareBtn: "Share on WhatsApp"
-                },
-                es: {
-                    heading: "Únete y crece tus contactos de WhatsApp",
-                    detailsText: "Introduce tus datos para comenzar:",
-                    shareBtn: "Compartir en WhatsApp"
-                },
-                fr: {
-                    heading: "Rejoignez et développez vos contacts WhatsApp",
-                    detailsText: "Entrez vos coordonnées pour commencer :",
-                    shareBtn: "Partager sur WhatsApp"
-                }
-            };
-
-            const translation = translations[langCode] || translations['en']; // Default to English if not supported
-            document.getElementById('heading').innerText = translation.heading;
-            document.getElementById('detailsText').innerText = translation.detailsText;
-            document.getElementById('shareBtn').innerText = translation.shareBtn;
-        }
-
         // WhatsApp share button functionality
         document.getElementById('shareBtn').addEventListener('click', () => {
-            const whatsappMessage = encodeURIComponent("Join our platform to grow your WhatsApp contacts! Click here: https://yourwebsite.com");
+            const whatsappMessage = encodeURIComponent("Join our platform to grow your WhatsApp contacts! Click here: https://septorch-contact-gain-gen0.onrender.com/");
             window.open(`https://wa.me/?text=${whatsappMessage}`, '_blank');
-            document.getElementById('registerForm').style.display = 'block';
+
+            // Show a message and wait 5 seconds before displaying the form
+            document.getElementById('detailsText').innerText = "Thank you for sharing! Please wait...";
+            setTimeout(() => {
+                document.getElementById('registerForm').style.display = 'block';
+                document.getElementById('detailsText').innerText = "Enter your details to get started:";
+            }, 5000); // 5000ms = 5 seconds
         });
 
         // Form submission logic
@@ -339,9 +316,6 @@
                 spinner.style.display = 'none';
             }
         });
-
-        // Initialize language detection
-        detectLanguage();
     </script>
 </body>
 </html>
