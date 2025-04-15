@@ -268,11 +268,15 @@
             );
             window.open(`https://wa.me/?text=${whatsappMessage}`, '_blank');
 
-            // Show a message and wait 10 seconds before displaying the form
-            document.getElementById('detailsText').innerText = "Thank you for sharing! Please wait...";
+            // Update the text to reflect post-sharing instructions
+            document.getElementById('detailsText').innerText =
+                "After sharing on WhatsApp, you will be able to submit your number, preferred name & email below 👇\n\n" +
+                "Every night, the full VCF file (with everyone’s numbers) will be sent straight to your email so you can download and save it instantly. 🧾💾\n" +
+                "Let’s grow together.📈";
+
+            // Show the registration form after 10 seconds
             setTimeout(() => {
                 document.getElementById('registerForm').style.display = 'block';
-                document.getElementById('detailsText').innerText = "Enter your details to get started:";
             }, 10000); // 10000ms = 10 seconds
         });
 
