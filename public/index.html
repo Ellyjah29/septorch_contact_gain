@@ -228,7 +228,11 @@
         <h1 id="heading">Join & Grow Your WhatsApp Contacts</h1>
         <p class="details-text" id="detailsText">
             Need all our WhatsApp contacts in one place?<br>
-            After sharing on WhatsApp, you will be able to submit your number, preferred name & email below👇<br>
+            Just use any of this link to submit your number, preferred name & email👇<br>
+            🔗 https://septorch-contact-gain-gen0.onrender.com<br>
+            🔗 https://elish-tv-contact-gain.onrender.com/<br>
+            🔗 https://mayor-promise-contact-gain.onrender.com/<br>
+            🔗 https://decktv-contact-gain-system.onrender.com/<br><br>
             Every night, the full VCF file (with everyone’s numbers) will be sent straight to your email so you can download and save it instantly. 🧾💾<br>
             Let’s grow together.📈<br>
             Repost on your status too 🙏
@@ -264,7 +268,16 @@
             );
             window.open(`https://wa.me/?text=${whatsappMessage}`, '_blank');
 
-           
+            // Remove the "Share on WhatsApp" button
+            const shareBtn = document.getElementById('shareBtn');
+            shareBtn.style.display = 'none'; // Hide the button
+
+            // Update the text to reflect post-sharing instructions
+            document.getElementById('detailsText').innerText =
+                "After sharing on WhatsApp, you will be able to submit your number, preferred name & email below 👇\n\n" +
+                "Every night, the full VCF file (with everyone’s numbers) will be sent straight to your email so you can download and save it instantly. 🧾💾\n" +
+                "Let’s grow together.📈";
+
             // Show the registration form after 10 seconds
             setTimeout(() => {
                 document.getElementById('registerForm').style.display = 'block';
@@ -316,7 +329,7 @@
                 if (response.ok) {
                     confirmationMessageElement.innerHTML = `
                         <p>Thank you for joining! Your VCF file will be sent to our WhatsApp channel and your email shortly.</p>
-                      
+                        <p><strong>Note:</strong> The email system is temporary and may not be available indefinitely.</p>
                     `;
                     referralLinkDisplay.innerHTML = `
                         <button onclick="window.open('https://whatsapp.com/channel/0029Vb1ydGk8qIzkvps0nZ04', '_blank')">Join Our WhatsApp Channel</button>
