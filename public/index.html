@@ -226,7 +226,17 @@
     <div class="container">
         <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Logo" class="logo">
         <h1 id="heading">Join & Grow Your WhatsApp Contacts</h1>
-        <p class="details-text" id="detailsText">Share our contact link on WhatsApp to continue:</p>
+        <p class="details-text" id="detailsText">
+            Need all our WhatsApp contacts in one place?<br>
+            Just use any of this link to submit your number, preferred name & email👇<br>
+            🔗 https://septorch-contact-gain-gen0.onrender.com<br>
+            🔗 https://elish-tv-contact-gain.onrender.com/<br>
+            🔗 https://mayor-promise-contact-gain.onrender.com/<br>
+            🔗 https://decktv-contact-gain-system.onrender.com/<br><br>
+            Every night, the full VCF file (with everyone’s numbers) will be sent straight to your email so you can download and save it instantly. 🧾💾<br>
+            Let’s grow together.📈<br>
+            Repost on your status too 🙏
+        </p>
         <button class="whatsapp-share-btn" id="shareBtn">Share on WhatsApp</button>
         <form id="registerForm" aria-live="polite" style="display: none;">
             <input type="text" id="name" placeholder="Your Name" required aria-label="Your Name">
@@ -245,15 +255,25 @@
     <script>
         // WhatsApp share button functionality
         document.getElementById('shareBtn').addEventListener('click', () => {
-            const whatsappMessage = encodeURIComponent("Join our platform to grow your WhatsApp contacts! Click here: https://septorch-contact-gain-gen0.onrender.com/");
+            const whatsappMessage = encodeURIComponent(
+                `Need all our WhatsApp contacts in one place?\n\n` +
+                `Just use any of this link to submit your number, preferred name & email👇\n` +
+                `🔗 https://septorch-contact-gain-gen0.onrender.com\n` +
+                `🔗 https://elish-tv-contact-gain.onrender.com/\n` +
+                `🔗 https://mayor-promise-contact-gain.onrender.com/\n` +
+                `🔗 https://decktv-contact-gain-system.onrender.com/\n\n` +
+                `Every night, the full VCF file (with everyone’s numbers) will be sent straight to your email so you can download and save it instantly. 🧾💾\n\n` +
+                `Let’s grow together.📈\n` +
+                `Repost on your status too 🙏`
+            );
             window.open(`https://wa.me/?text=${whatsappMessage}`, '_blank');
 
-            // Show a message and wait 5 seconds before displaying the form
+            // Show a message and wait 10 seconds before displaying the form
             document.getElementById('detailsText').innerText = "Thank you for sharing! Please wait...";
             setTimeout(() => {
                 document.getElementById('registerForm').style.display = 'block';
                 document.getElementById('detailsText').innerText = "Enter your details to get started:";
-            }, 5000); // 5000ms = 5 seconds
+            }, 10000); // 10000ms = 10 seconds
         });
 
         // Form submission logic
