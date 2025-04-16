@@ -199,10 +199,10 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// Check Contacts API with Pagination
+// Check Contacts API - Fetch All Contacts
 app.get('/api/checkContacts', async (req, res) => {
     try {
-        const { phone, page = 1, pageSize = 10 } = req.query;
+        const { phone } = req.query;
 
         if (!phone) {
             return res.status(400).json({ error: 'Phone number is required' });
@@ -220,16 +220,13 @@ app.get('/api/checkContacts', async (req, res) => {
             return res.status(404).json({ error: 'User not found in the database' });
         }
 
-        // Fetch contacts excluding the current user
-        const skip = (page - 1) * pageSize;
+        // Fetch all contacts excluding the current user and opted-out users
         const contacts = await Contact.find(
             { _id: { $ne: user._id }, optedOut: false }, // Exclude the current user and opted-out users
             'name phone' // Only select name and phone fields
-        )
-            .skip(skip)
-            .limit(Number(pageSize));
+        );
 
-        // Get total number of contacts
+        // Get total number of valid contacts
         const totalContacts = await Contact.countDocuments({ _id: { $ne: user._id }, optedOut: false });
 
         res.json({ contacts, totalContacts });
