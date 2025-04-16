@@ -110,6 +110,36 @@
             background: #f9f9f9;
             border-radius: 8px;
             color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .whatsapp-message-btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .whatsapp-message-btn:hover {
+            background: #128C7E;
+        }
+        .load-more-btn {
+            margin-top: 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .total-contacts {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #555;
         }
         footer {
             position: fixed;
@@ -179,6 +209,8 @@
             </form>
             <p id="checkMessage"></p>
             <ul id="contactsList"></ul>
+            <button class="load-more-btn" id="loadMoreBtn" style="display: none;">Load More</button>
+            <p class="total-contacts" id="totalContacts"></p>
             <div class="spinner" id="checkSpinner"></div>
         </div>
     </div>
@@ -277,16 +309,34 @@
         });
 
         // Check Contacts Form Submission
+        let currentPage = 1;
+        const pageSize = 10;
+        let totalContacts = 0;
+
         document.getElementById('checkContactsForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            currentPage = 1; // Reset page count
+            fetchContacts();
+        });
+
+        document.getElementById('loadMoreBtn').addEventListener('click', () => {
+            currentPage++;
+            fetchContacts();
+        });
+
+        async function fetchContacts() {
             const userPhone = document.getElementById('userPhone').value.trim();
             const checkMessage = document.getElementById('checkMessage');
             const contactsList = document.getElementById('contactsList');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            const totalContactsElement = document.getElementById('totalContacts');
             const spinner = document.getElementById('checkSpinner');
 
-            // Clear previous messages and contacts
-            checkMessage.innerText = '';
-            contactsList.innerHTML = '';
+            // Clear previous messages and contacts (only for the first page)
+            if (currentPage === 1) {
+                checkMessage.innerText = '';
+                contactsList.innerHTML = '';
+            }
 
             // Validate phone number
             const phoneRegex = /^\+?[1-9]\d{9,}$/;
@@ -299,17 +349,25 @@
             spinner.style.display = 'block';
 
             try {
-                const response = await fetch(`/api/checkContacts?phone=${encodeURIComponent(userPhone)}`);
+                const response = await fetch(`/api/checkContacts?phone=${encodeURIComponent(userPhone)}&page=${currentPage}&pageSize=${pageSize}`);
                 const data = await response.json();
 
                 if (response.ok) {
+                    totalContacts = data.totalContacts || 0;
                     if (data.contacts && data.contacts.length > 0) {
-                        checkMessage.innerText = 'Here are the registered users:';
+                        if (currentPage === 1) {
+                            checkMessage.innerText = 'Here are the registered users:';
+                        }
                         data.contacts.forEach(contact => {
                             const listItem = document.createElement('li');
-                            listItem.textContent = contact.name; // Display only the name
+                            listItem.innerHTML = `
+                                <span>${contact.name}</span>
+                                <button class="whatsapp-message-btn" onclick="sendMessage('${contact.phone}')">Message via WhatsApp</button>
+                            `;
                             contactsList.appendChild(listItem);
                         });
+                        // Show "Load More" button if there are more contacts
+                        loadMoreBtn.style.display = (currentPage * pageSize < totalContacts) ? 'block' : 'none';
                     } else {
                         checkMessage.innerText = 'No contacts found or you are not authorized to view them.';
                     }
@@ -321,8 +379,17 @@
             } finally {
                 // Hide spinner
                 spinner.style.display = 'none';
+                // Update total contacts count
+                totalContactsElement.innerText = `Total Contacts: ${totalContacts}`;
             }
-        });
+        }
+
+        // Function to send a direct WhatsApp message
+        function sendMessage(phoneNumber) {
+            const message = encodeURIComponent('Hello! I saw your contact on the shared list.');
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+            window.open(whatsappUrl, '_blank');
+        }
     </script>
 </body>
 </html>
