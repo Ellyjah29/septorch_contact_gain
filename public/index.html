@@ -13,7 +13,6 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         html, body {
             height: 100%;
             font-family: 'Poppins', Arial, sans-serif;
@@ -21,13 +20,11 @@
             line-height: 1.6;
             overflow-x: hidden;
         }
-
         body {
             background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed;
             background-size: cover;
             position: relative;
         }
-
         /* Gradient Overlay */
         body::before {
             content: '';
@@ -39,25 +36,22 @@
             background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8));
             z-index: -1;
         }
-
         .container {
             max-width: 500px;
             margin: 50px auto;
             padding: 40px 30px;
-            background: rgba(255, 255, 255, 0.9); /* Increased opacity for better readability */
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 20px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
             text-align: center;
             animation: fadeIn 1s ease-in-out;
         }
-
         .logo {
             width: 150px;
             margin-bottom: 20px;
             border-radius: 15px;
             animation: float 3s ease-in-out infinite;
         }
-
         h1 {
             font-size: 2rem;
             font-weight: 700;
@@ -66,22 +60,14 @@
             text-transform: uppercase;
             letter-spacing: 2px;
         }
-
         p {
             font-size: 1rem;
             margin: 5px 0;
             color: #333;
         }
-
-        .details-text {
-            color: #000;
-            font-weight: 600;
-        }
-
         form {
             margin-top: 20px;
         }
-
         input[type="text"],
         input[type="email"] {
             width: 100%;
@@ -93,14 +79,12 @@
             font-family: 'Poppins', Arial, sans-serif;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
-
         input[type="text"]:focus,
         input[type="email"]:focus {
             border-color: #4CAF50;
             box-shadow: 0 0 12px rgba(76, 175, 80, 0.6);
             outline: none;
         }
-
         button {
             background: linear-gradient(135deg, #4CAF50, #45a049);
             color: white;
@@ -112,51 +96,23 @@
             font-weight: 600;
             transition: transform 0.3s ease, background 0.3s ease;
         }
-
         button:hover {
             background: linear-gradient(135deg, #45a049, #4CAF50);
             transform: scale(1.05);
         }
-
         button:active {
             transform: scale(0.98);
         }
-
         #message {
             margin-top: 10px;
             font-size: 0.9rem;
             color: red;
         }
-
         #confirmationMessage {
             margin-top: 15px;
             font-size: 1rem;
             color: green;
         }
-
-        #referralLinkDisplay button {
-            display: inline-block;
-            margin-top: 20px;
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            color: white;
-            border: none;
-            padding: 16px 30px;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.3s ease, background 0.3s ease;
-        }
-
-        #referralLinkDisplay button:hover {
-            background: linear-gradient(135deg, #0056b3, #007bff);
-            transform: scale(1.05);
-        }
-
-        #referralLinkDisplay button:active {
-            transform: scale(0.98);
-        }
-
         footer {
             text-align: center;
             padding: 10px 0;
@@ -167,7 +123,6 @@
             width: 100%;
             font-size: 0.9rem;
         }
-
         /* WhatsApp Share Button */
         .whatsapp-share-btn {
             display: block;
@@ -182,43 +137,36 @@
             cursor: pointer;
             transition: transform 0.3s ease, background 0.3s ease;
         }
-
         .whatsapp-share-btn:hover {
             background: #128C7E;
             transform: scale(1.05);
         }
-
         .whatsapp-share-btn:active {
             transform: scale(0.98);
         }
-
-        /* Loading Spinner */
-        .spinner {
-            display: none;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #4CAF50;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 15px auto;
+        /* Contacts List */
+        #contactsList {
+            margin-top: 20px;
+            text-align: left;
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        #contactsList li {
+            list-style: none;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
         }
-
-        /* Fade-In Animation */
-        @keyframes fadeIn {
-            0% { opacity: 0; transform: translateY(-20px); }
-            100% { opacity: 1; transform: translateY(0); }
+        .whatsapp-message-btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
         }
-
-        /* Floating Animation for Logo */
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+        .whatsapp-message-btn:hover {
+            background: #128C7E;
         }
     </style>
 </head>
@@ -244,6 +192,17 @@
         <p id="message" aria-live="assertive"></p>
         <div id="confirmationMessage" aria-live="polite"></div>
         <div id="referralLinkDisplay"></div>
+
+        <!-- Check Contacts Section -->
+        <div id="checkContactsSection" style="margin-top: 20px; display: none;">
+            <h2>Check Contacts</h2>
+            <form id="checkContactsForm">
+                <input type="text" id="userPhone" placeholder="Enter your phone number (with country code)" required />
+                <button type="submit">Check Contacts</button>
+            </form>
+            <p id="checkMessage"></p>
+            <ul id="contactsList"></ul>
+        </div>
     </div>
     <footer>
         <p>Powered by <strong>Septorch</strong></p>
@@ -252,27 +211,32 @@
         // WhatsApp share button functionality
         document.getElementById('shareBtn').addEventListener('click', () => {
             const whatsappMessage = encodeURIComponent(
-                `Need all our WhatsApp contacts in one place?\n\n` +
-                `Just use any of this link to submit your number, preferred name & email👇\n` +
-                `🔗 https://septorch-contact-gain-gen0.onrender.com\n` +
-                `🔗 https://elish-tv-contact-gain.onrender.com/\n` +
-                `🔗 https://mayor-promise-contact-gain.onrender.com/\n` +
-                `🔗 https://decktv-contact-gain-system.onrender.com/\n\n` +
-                `Every night, the full VCF file (with everyone’s numbers) will be sent straight to your email so you can download and save it instantly. 🧾💾\n\n` +
-                `Let’s grow together.📈\n` +
+                `Need all our WhatsApp contacts in one place?
+` +
+                `Just use any of this link to submit your number, preferred name & email👇
+` +
+                `🔗 https://septorch-contact-gain-gen0.onrender.com
+` +
+                `🔗 https://elish-tv-contact-gain.onrender.com/
+` +
+                `🔗 https://mayor-promise-contact-gain.onrender.com/
+` +
+                `🔗 https://decktv-contact-gain-system.onrender.com/
+` +
+                `Every night, the full VCF file (with everyone’s numbers) will be sent straight to your email so you can download and save it instantly. 🧾💾
+` +
+                `Let’s grow together.📈
+` +
                 `Repost on your status too 🙏`
             );
             window.open(`https://wa.me/?text=${whatsappMessage}`, '_blank');
-
             // Remove the "Share on WhatsApp" button
             const shareBtn = document.getElementById('shareBtn');
             shareBtn.style.display = 'none'; // Hide the button
-
             // Update the text to reflect post-sharing instructions
             document.getElementById('detailsText').innerText =
                 "Every night, the full VCF file (with everyone’s numbers) will be sent straight to your email so you can download and save it instantly. 🧾💾\n" +
                 "Let’s grow together.📈";
-
             // Show the registration form after 10 seconds
             setTimeout(() => {
                 document.getElementById('registerForm').style.display = 'block';
@@ -282,7 +246,6 @@
         // Form submission logic
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const name = document.getElementById('name').value.trim();
             const email = document.getElementById('email').value.trim();
             const whatsappNumber = document.getElementById('whatsappNumber').value.trim();
@@ -290,41 +253,34 @@
             const confirmationMessageElement = document.getElementById('confirmationMessage');
             const referralLinkDisplay = document.getElementById('referralLinkDisplay');
             const spinner = document.getElementById('spinner');
-
             // Clear previous messages
             messageElement.innerText = "";
             confirmationMessageElement.innerText = "";
             referralLinkDisplay.innerHTML = "";
-
             // Validate email format
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 messageElement.innerText = "Please enter a valid email address.";
                 return;
             }
-
             // Validate phone number: Must include a country code (starts with + or has at least 10 digits)
             const phoneRegex = /^\+?[1-9]\d{9,}$/;
             if (!phoneRegex.test(whatsappNumber)) {
                 messageElement.innerText = "Please enter a valid phone number with the country code (e.g., +1234567890).";
                 return;
             }
-
             // Show spinner
             spinner.style.display = 'block';
-
             try {
                 const response = await fetch('/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, email, phone: whatsappNumber })
                 });
-
                 const data = await response.json();
                 if (response.ok) {
                     confirmationMessageElement.innerHTML = `
                         <p>Thank you for joining! Your VCF file will be sent to our WhatsApp channel and your email shortly.</p>
-                        
                     `;
                     referralLinkDisplay.innerHTML = `
                         <button onclick="window.open('https://whatsapp.com/channel/0029Vb1ydGk8qIzkvps0nZ04', '_blank')">Join Our WhatsApp Channel</button>
@@ -339,6 +295,61 @@
                 spinner.style.display = 'none';
             }
         });
+
+        // Check Contacts Form Submission
+        document.getElementById('checkContactsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userPhone = document.getElementById('userPhone').value.trim();
+            const checkMessage = document.getElementById('checkMessage');
+            const contactsList = document.getElementById('contactsList');
+
+            // Clear previous messages and contacts
+            checkMessage.innerText = '';
+            contactsList.innerHTML = '';
+
+            // Validate phone number
+            const phoneRegex = /^\+?[1-9]\d{9,}$/;
+            if (!phoneRegex.test(userPhone)) {
+                checkMessage.innerText = 'Please enter a valid phone number with the country code.';
+                return;
+            }
+
+            // Fetch contacts from the server
+            try {
+                const response = await fetch(`/api/checkContacts?phone=${encodeURIComponent(userPhone)}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.contacts && data.contacts.length > 0) {
+                        checkMessage.innerText = 'Here are the contacts:';
+                        data.contacts.forEach(contact => {
+                            const listItem = document.createElement('li');
+                            listItem.innerHTML = `
+                                <strong>${contact.name}</strong> - ${contact.phone}
+                                <button class="whatsapp-message-btn" onclick="sendMessage('${contact.phone}')">Message via WhatsApp</button>
+                            `;
+                            contactsList.appendChild(listItem);
+                        });
+                    } else {
+                        checkMessage.innerText = 'No contacts found or you are not authorized to view them.';
+                    }
+                } else {
+                    checkMessage.innerText = data.error || 'Failed to fetch contacts.';
+                }
+            } catch (error) {
+                checkMessage.innerText = 'An error occurred. Please try again later.';
+            }
+        });
+
+        // Function to send a direct WhatsApp message
+        function sendMessage(phoneNumber) {
+            const message = encodeURIComponent('Hello! I saw your contact on the shared list.');
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        // Show the "Check Contacts" section after registration
+        document.getElementById('checkContactsSection').style.display = 'block';
     </script>
 </body>
 </html>
