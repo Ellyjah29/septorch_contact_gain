@@ -84,7 +84,7 @@ const transporter = nodemailer.createTransport({
 // Send Daily Email Reminders at 2:00 PM WAT (West Africa Time)
 cron.schedule('0 14 * * *', async () => {
     try {
-        const users = await Contact.find({ optedOut: false });
+        const users = await Contact.find();
         for (const user of users) {
             const vcfEntry = `BEGIN:VCARD\nVERSION:3.0\nFN:${user.name}\nTEL;TYPE=CELL:${user.phone}\nEMAIL:${user.email}\nEND:VCARD`;
             fs.appendFileSync('contacts.vcf', vcfEntry);
@@ -199,7 +199,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// Check Contacts API - Fetch All Contacts
+// Check Contacts API - Fetch All Users (Ignore Opted-Out Users)
 app.get('/api/checkContacts', async (req, res) => {
     try {
         const { phone } = req.query;
@@ -220,14 +220,14 @@ app.get('/api/checkContacts', async (req, res) => {
             return res.status(404).json({ error: 'User not found in the database' });
         }
 
-        // Fetch all contacts excluding the current user and opted-out users
+        // Fetch all contacts excluding the current user (ignore opted-out users for now)
         const contacts = await Contact.find(
-            { _id: { $ne: user._id }, optedOut: false }, // Exclude the current user and opted-out users
-            'name phone' // Only select name and phone fields
+            { _id: { $ne: user._id } }, // Exclude only the current user
+            'name phone email joinedChannel optedOut' // Select relevant fields
         );
 
         // Get total number of valid contacts
-        const totalContacts = await Contact.countDocuments({ _id: { $ne: user._id }, optedOut: false });
+        const totalContacts = await Contact.countDocuments({ _id: { $ne: user._id } });
 
         res.json({ contacts, totalContacts });
     } catch (error) {
