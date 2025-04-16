@@ -156,17 +156,30 @@
             background: rgba(255, 255, 255, 0.8);
             border-radius: 10px;
         }
-        .whatsapp-message-btn {
-            background: #25D366;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s ease;
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 15px auto;
         }
-        .whatsapp-message-btn:hover {
-            background: #128C7E;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Fade-In Animation */
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        /* Floating Animation for Logo */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
     </style>
 </head>
@@ -192,9 +205,8 @@
         <p id="message" aria-live="assertive"></p>
         <div id="confirmationMessage" aria-live="polite"></div>
         <div id="referralLinkDisplay"></div>
-
         <!-- Check Contacts Section -->
-        <div id="checkContactsSection" style="margin-top: 20px; display: none;">
+        <div id="checkContactsSection" style="margin-top: 20px;">
             <h2>Check Contacts</h2>
             <form id="checkContactsForm">
                 <input type="text" id="userPhone" placeholder="Enter your phone number (with country code)" required />
@@ -205,7 +217,12 @@
         </div>
     </div>
     <footer>
-        <p>Powered by <strong>Septorch</strong></p>
+        <p>
+            Powered by 
+            <a href="https://www.tiktok.com/@septorch" target="_blank" style="color: #4CAF50; text-decoration: none; font-weight: bold;">
+                Septorch
+            </a>
+        </p>
     </footer>
     <script>
         // WhatsApp share button functionality
@@ -302,6 +319,7 @@
             const userPhone = document.getElementById('userPhone').value.trim();
             const checkMessage = document.getElementById('checkMessage');
             const contactsList = document.getElementById('contactsList');
+            const spinner = document.querySelector('#checkContactsSection .spinner');
 
             // Clear previous messages and contacts
             checkMessage.innerText = '';
@@ -314,6 +332,9 @@
                 return;
             }
 
+            // Show spinner
+            spinner.style.display = 'block';
+
             // Fetch contacts from the server
             try {
                 const response = await fetch(`/api/checkContacts?phone=${encodeURIComponent(userPhone)}`);
@@ -321,13 +342,10 @@
 
                 if (response.ok) {
                     if (data.contacts && data.contacts.length > 0) {
-                        checkMessage.innerText = 'Here are the contacts:';
+                        checkMessage.innerText = 'Here are the registered users:';
                         data.contacts.forEach(contact => {
                             const listItem = document.createElement('li');
-                            listItem.innerHTML = `
-                                <strong>${contact.name}</strong> - ${contact.phone}
-                                <button class="whatsapp-message-btn" onclick="sendMessage('${contact.phone}')">Message via WhatsApp</button>
-                            `;
+                            listItem.textContent = contact.name; // Display only the name
                             contactsList.appendChild(listItem);
                         });
                     } else {
@@ -338,18 +356,11 @@
                 }
             } catch (error) {
                 checkMessage.innerText = 'An error occurred. Please try again later.';
+            } finally {
+                // Hide spinner
+                spinner.style.display = 'none';
             }
         });
-
-        // Function to send a direct WhatsApp message
-        function sendMessage(phoneNumber) {
-            const message = encodeURIComponent('Hello! I saw your contact on the shared list.');
-            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
-            window.open(whatsappUrl, '_blank');
-        }
-
-        // Show the "Check Contacts" section after registration
-        document.getElementById('checkContactsSection').style.display = 'block';
     </script>
 </body>
 </html>
