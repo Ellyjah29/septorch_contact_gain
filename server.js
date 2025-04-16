@@ -127,6 +127,27 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+// Check Contacts API
+app.get('/api/checkContacts', async (req, res) => {
+  try {
+    const { phone } = req.query;
+    if (!phone) return res.status(400).json({ error: 'Phone number is required' });
+
+    // Find the user by phone number
+    const user = await Contact.findOne({ phone });
+    if (!user) return res.status(404).json({ error: 'User not found in the database' });
+
+    // Fetch all contacts except the current user
+    const contacts = await Contact.find({ _id: { $ne: user._id }, optedOut: false })
+      .select('name phone'); // Only select name and phone fields
+
+    res.json({ contacts });
+  } catch (error) {
+    logger.error('Error checking contacts:', error);
+    res.status(500).json({ error: 'Failed to check contacts' });
+  }
+});
+
 // Admin Panel
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
@@ -217,7 +238,6 @@ app.post('/api/scheduleAnnouncement', adminAuth, async (req, res) => {
   try {
     const scheduledTime = new Date(dateTime);
     if (scheduledTime < new Date()) return res.status(400).json({ error: 'Scheduled time must be in the future' });
-
     setTimeout(async () => {
       if (whatsappSock && whatsappSock.user) {
         const botNumber = whatsappSock.user.id.split(':')[0];
@@ -227,7 +247,6 @@ app.post('/api/scheduleAnnouncement', adminAuth, async (req, res) => {
         logger.warn('WhatsApp bot is not connected. Announcement skipped.');
       }
     }, scheduledTime - new Date());
-
     res.json({ message: 'Announcement scheduled successfully' });
   } catch (error) {
     logger.error('Error scheduling announcement:', error);
@@ -257,7 +276,6 @@ async function startWhatsAppBot() {
       printQRInTerminal: false,
       getMessage: async () => ({ conversation: '' }),
     });
-
     whatsappSock.ev.on('creds.update', saveCreds);
 
     // Handle connection updates
@@ -310,29 +328,26 @@ io.on('connection', socket => {
   });
 });
 
-// Start Server
-server.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-});
-
 // Trigger Pairing with Phone Number
 app.post('/api/startPairing', adminAuth, async (req, res) => {
   try {
     const phone = req.body.phone;
     if (!phone) return res.status(400).json({ error: 'Phone number is required' });
-
     // Generate a random pairing code
     const pairingCode = Math.random().toString(36).substring(2, 8);
     logger.info(`Pairing initiated for phone ${phone}. Code: ${pairingCode}`);
-
     // Save the pairing code temporarily (e.g., in memory or database)
     // Here, we simulate saving it in memory
     const pairingData = { phone, code: pairingCode };
     io.emit('pairingCode', pairingData);
-
     res.json({ message: 'Pairing started. Check below.', pairingCode });
   } catch (error) {
     logger.error('Error starting pairing:', error);
     res.status(500).json({ error: 'Failed to start pairing' });
   }
+});
+
+// Start Server
+server.listen(PORT, () => {
+  logger.info(`Server running on port ${PORT}`);
 });
