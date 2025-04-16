@@ -222,8 +222,10 @@ app.get('/api/checkContacts', async (req, res) => {
 
         // Fetch contacts excluding the current user
         const skip = (page - 1) * pageSize;
-        const contacts = await Contact.find({ _id: { $ne: user._id }, optedOut: false })
-            .select('name phone')
+        const contacts = await Contact.find(
+            { _id: { $ne: user._id }, optedOut: false }, // Exclude the current user and opted-out users
+            'name phone' // Only select name and phone fields
+        )
             .skip(skip)
             .limit(Number(pageSize));
 
