@@ -181,7 +181,11 @@
         }
         /* Dark Mode */
         body.dark-mode {
-            background: #121212;
+            background: url('https://files.catbox.moe/9mgrg7.jpeg') no-repeat center center fixed;
+            background-size: cover;
+        }
+        body.dark-mode::before {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.9));
         }
         body.dark-mode .container {
             background: #1E1E1E;
