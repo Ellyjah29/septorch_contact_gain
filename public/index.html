@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsApp Contact Gain</title>
     <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         /* General Styles */
         * {
@@ -14,8 +16,8 @@
             box-sizing: border-box;
         }
         body {
-            font-family: 'Poppins', Arial, sans-serif;
-            color: #fff;
+            font-family: 'Inter', Arial, sans-serif;
+            color: #333;
             line-height: 1.6;
             background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed;
             background-size: cover;
@@ -40,7 +42,7 @@
             max-width: 500px;
             width: 100%;
             padding: 40px;
-            background: rgba(255, 255, 255, 0.95);
+            background: #FFFFFF;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             text-align: center;
@@ -53,10 +55,10 @@
             animation: float 3s ease-in-out infinite;
         }
         h1 {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: 700;
             margin-bottom: 20px;
-            color: #333;
+            color: #2196F3;
         }
         p {
             font-size: 1rem;
@@ -71,7 +73,7 @@
             width: 100%;
             padding: 16px;
             margin: 10px 0;
-            border: 2px solid #ddd;
+            border: 2px solid #E0E0E0;
             border-radius: 12px;
             font-size: 1rem;
             transition: border-color 0.3s ease;
@@ -82,18 +84,19 @@
             outline: none;
         }
         button {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
+            background: linear-gradient(135deg, #4CAF50, #008080);
             color: white;
             border: none;
             padding: 16px 30px;
-            border-radius: 12px;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 1rem;
             font-weight: 600;
-            transition: transform 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, background 0.3s ease;
         }
         button:hover {
-            background: linear-gradient(135deg, #45a049, #4CAF50);
+            background: linear-gradient(135deg, #008080, #4CAF50);
             transform: scale(1.05);
         }
         button:active {
@@ -176,6 +179,24 @@
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-10px); }
         }
+        /* Dark Mode */
+        body.dark-mode {
+            background: #121212;
+        }
+        body.dark-mode .container {
+            background: #1E1E1E;
+            color: #E0E0E0;
+        }
+        body.dark-mode h1 {
+            color: #2196F3;
+        }
+        body.dark-mode p {
+            color: #E0E0E0;
+        }
+        body.dark-mode footer {
+            background: #121212;
+            color: #E0E0E0;
+        }
     </style>
 </head>
 <body>
@@ -189,7 +210,9 @@
             Let’s grow together.📈<br>
             Repost on your status too 🙏
         </p>
-        <button class="whatsapp-share-btn" id="shareBtn">Share on WhatsApp</button>
+        <button class="whatsapp-share-btn" id="shareBtn">
+            <i class="fab fa-whatsapp"></i> Share on WhatsApp
+        </button>
         <form id="registerForm" style="display: none;">
             <input type="text" id="name" placeholder="Your Name" required aria-label="Your Name">
             <input type="email" id="email" placeholder="Email Address" required aria-label="Email Address">
@@ -220,20 +243,30 @@
             <a href="https://www.tiktok.com/@septorch" target="_blank" style="color: #4CAF50; text-decoration: none; font-weight: bold;">
                 Septorch
             </a>
+            <span style="margin-left: 10px;">
+                <button onclick="toggleDarkMode()" style="background: none; border: none; color: white; cursor: pointer;">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </span>
         </p>
     </footer>
     <script>
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+        }
+
         // WhatsApp Share Button Functionality
         document.getElementById('shareBtn').addEventListener('click', () => {
             const whatsappMessage = encodeURIComponent(
-                `Need all our WhatsApp contacts in one place?\n\n` +
-                `Just use any of this link to submit your number, preferred name & email👇\n\n` +
+                `Need all our WhatsApp contacts in one place?\n` +
+                `Just use any of this link to submit your number, preferred name & email👇\n` +
                 `🔗 https://septorch-contact-gain-gen0.onrender.com\n` +
                 `🔗 https://elish-tv-contact-gain.onrender.com/\n` +
                 `🔗 https://mayor-promise-contact-gain.onrender.com/\n` +
-                `🔗 https://decktv-contact-gain-system.onrender.com/\n\n` +
-                `Every night, the full VCF file (with everyone’s numbers) will be sent straight to your email so you can download and save it instantly. 🧾💾\n\n` +
-                `Let’s grow together.📈\n\n` +
+                `🔗 https://decktv-contact-gain-system.onrender.com/\n` +
+                `Every night, the full VCF file (with everyone’s numbers) will be sent straight to your email so you can download and save it instantly. 🧾💾\n` +
+                `Let’s grow together.📈\n` +
                 `Repost on your status too 🙏`
             );
             window.open(`https://wa.me/?text=${whatsappMessage}`, '_blank');
@@ -259,29 +292,24 @@
             const confirmationMessageElement = document.getElementById('confirmationMessage');
             const referralLinkDisplay = document.getElementById('referralLinkDisplay');
             const spinner = document.getElementById('spinner');
-
             // Clear previous messages
             messageElement.innerText = "";
             confirmationMessageElement.innerText = "";
             referralLinkDisplay.innerHTML = "";
-
             // Validate email format
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 messageElement.innerText = "Please enter a valid email address.";
                 return;
             }
-
             // Validate phone number: Must include a country code (starts with + or has at least 10 digits)
             const phoneRegex = /^\+?[1-9]\d{9,}$/;
             if (!phoneRegex.test(whatsappNumber)) {
                 messageElement.innerText = "Please enter a valid phone number with the country code (e.g., +1234567890).";
                 return;
             }
-
             // Show spinner
             spinner.style.display = 'block';
-
             try {
                 const response = await fetch('/api/register', {
                     method: 'POST',
@@ -289,7 +317,6 @@
                     body: JSON.stringify({ name, email, phone: whatsappNumber })
                 });
                 const data = await response.json();
-
                 if (response.ok) {
                     confirmationMessageElement.innerHTML = `
                         <p>Thank you for joining! Your VCF file will be sent to our WhatsApp channel and your email shortly.</p>
@@ -312,18 +339,15 @@
         let currentPage = 1;
         const pageSize = 10;
         let totalContacts = 0;
-
         document.getElementById('checkContactsForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             currentPage = 1; // Reset page count
             fetchContacts();
         });
-
         document.getElementById('loadMoreBtn').addEventListener('click', () => {
             currentPage++;
             fetchContacts();
         });
-
         async function fetchContacts() {
             const userPhone = document.getElementById('userPhone').value.trim();
             const checkMessage = document.getElementById('checkMessage');
@@ -331,27 +355,22 @@
             const loadMoreBtn = document.getElementById('loadMoreBtn');
             const totalContactsElement = document.getElementById('totalContacts');
             const spinner = document.getElementById('checkSpinner');
-
             // Clear previous messages and contacts (only for the first page)
             if (currentPage === 1) {
                 checkMessage.innerText = '';
                 contactsList.innerHTML = '';
             }
-
             // Validate phone number
             const phoneRegex = /^\+?[1-9]\d{9,}$/;
             if (!phoneRegex.test(userPhone)) {
                 checkMessage.innerText = 'Please enter a valid phone number with the country code.';
                 return;
             }
-
             // Show spinner
             spinner.style.display = 'block';
-
             try {
                 const response = await fetch(`/api/checkContacts?phone=${encodeURIComponent(userPhone)}&page=${currentPage}&pageSize=${pageSize}`);
                 const data = await response.json();
-
                 if (response.ok) {
                     totalContacts = data.totalContacts || 0;
                     if (data.contacts && data.contacts.length > 0) {
@@ -362,7 +381,9 @@
                             const listItem = document.createElement('li');
                             listItem.innerHTML = `
                                 <span>${contact.name}</span>
-                                <button class="whatsapp-message-btn" onclick="sendMessage('${contact.phone}')">Message via WhatsApp</button>
+                                <button class="whatsapp-message-btn" onclick="sendMessage('${contact.phone}')">
+                                    <i class="fab fa-whatsapp"></i> Message via WhatsApp
+                                </button>
                             `;
                             contactsList.appendChild(listItem);
                         });
