@@ -217,6 +217,7 @@
         <button class="whatsapp-share-btn" id="shareBtn">
             <i class="fab fa-whatsapp"></i> Share on WhatsApp
         </button>
+        <p id="checkingMessage" style="display: none; color: #2196F3;">Checking if it was shared...</p>
         <form id="registerForm" style="display: none;">
             <input type="text" id="name" placeholder="Your Name" required aria-label="Your Name">
             <input type="email" id="email" placeholder="Email Address" required aria-label="Email Address">
@@ -261,29 +262,43 @@
         }
 
         // WhatsApp Share Button Functionality
-        document.getElementById('shareBtn').addEventListener('click', () => {
-            const whatsappMessage = encodeURIComponent(
-                `Need all our WhatsApp contacts in one place?\n` +
-                `Just use any of this link to submit your number, preferred name & email👇\n` +
-                `🔗 https://septorch-contact-gain-gen0.onrender.com\n` +
-                `🔗 https://elish-tv-contact-gain.onrender.com/\n` +
-                `🔗 https://mayor-promise-contact-gain.onrender.com/\n` +
-                `🔗 https://decktv-contact-gain-system.onrender.com/\n` +
-                `Every night, the full VCF file (with everyone’s numbers) will be sent straight to your email so you can download and save it instantly. 🧾💾\n` +
-                `Let’s grow together.📈\n` +
-                `Repost on your status too 🙏`
-            );
-            window.open(`https://wa.me/?text=${whatsappMessage}`, '_blank');
-            // Hide the "Share on WhatsApp" button
-            document.getElementById('shareBtn').style.display = 'none';
-            // Update the text to reflect post-sharing instructions
-            document.getElementById('detailsText').innerText =
-                "Every night, the full VCF file (with everyone’s numbers) will be sent straight to your email so you can download and save it instantly. 🧾💾\n" +
-                "Let’s grow together.📈";
-            // Show the registration form after 10 seconds
-            setTimeout(() => {
+        let isShared = false; // Track if the user has shared
+        const shareBtn = document.getElementById('shareBtn');
+        const checkingMessage = document.getElementById('checkingMessage');
+
+        shareBtn.addEventListener('click', () => {
+            if (!isShared) {
+                // First click: Open WhatsApp and show "Checking if it was shared..."
+                const whatsappMessage = encodeURIComponent(
+                    `Need all our WhatsApp contacts in one place?\n` +
+                    `Just use any of this link to submit your number, preferred name & email👇\n` +
+                    `🔗 https://septorch-contact-gain-gen0.onrender.com\n` +
+                    `🔗 https://elish-tv-contact-gain.onrender.com/\n` +
+                    `🔗 https://mayor-promise-contact-gain.onrender.com/\n` +
+                    `🔗 https://decktv-contact-gain-system.onrender.com/\n` +
+                    `Every night, the full VCF file (with everyone’s numbers) will be sent straight to your email so you can download and save it instantly. 🧾💾\n` +
+                    `Let’s grow together.📈\n` +
+                    `Repost on your status too 🙏`
+                );
+                window.open(`https://wa.me/?text=${whatsappMessage}`, '_blank');
+
+                // Hide the button and show the checking message
+                shareBtn.style.display = 'none';
+                checkingMessage.style.display = 'block';
+
+                // After 10 seconds, show the button again with updated text
+                setTimeout(() => {
+                    checkingMessage.style.display = 'none';
+                    shareBtn.textContent = 'Please share again';
+                    shareBtn.style.display = 'block';
+                }, 10000); // 10000ms = 10 seconds
+            } else {
+                // Second click: Show the registration form
                 document.getElementById('registerForm').style.display = 'block';
-            }, 10000); // 10000ms = 10 seconds
+            }
+
+            // Update the tracking flag
+            isShared = !isShared;
         });
 
         // Registration Form Submission
@@ -296,24 +311,29 @@
             const confirmationMessageElement = document.getElementById('confirmationMessage');
             const referralLinkDisplay = document.getElementById('referralLinkDisplay');
             const spinner = document.getElementById('spinner');
+
             // Clear previous messages
             messageElement.innerText = "";
             confirmationMessageElement.innerText = "";
             referralLinkDisplay.innerHTML = "";
+
             // Validate email format
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 messageElement.innerText = "Please enter a valid email address.";
                 return;
             }
+
             // Validate phone number: Must include a country code (starts with + or has at least 10 digits)
             const phoneRegex = /^\+?[1-9]\d{9,}$/;
             if (!phoneRegex.test(whatsappNumber)) {
                 messageElement.innerText = "Please enter a valid phone number with the country code (e.g., +1234567890).";
                 return;
             }
+
             // Show spinner
             spinner.style.display = 'block';
+
             try {
                 const response = await fetch('/api/register', {
                     method: 'POST',
@@ -321,6 +341,7 @@
                     body: JSON.stringify({ name, email, phone: whatsappNumber })
                 });
                 const data = await response.json();
+
                 if (response.ok) {
                     confirmationMessageElement.innerHTML = `
                         <p>Thank you for joining! Your VCF file will be sent to our WhatsApp channel and your email shortly.</p>
@@ -352,6 +373,7 @@
             currentPage++;
             fetchContacts();
         });
+
         async function fetchContacts() {
             const userPhone = document.getElementById('userPhone').value.trim();
             const checkMessage = document.getElementById('checkMessage');
@@ -359,28 +381,35 @@
             const loadMoreBtn = document.getElementById('loadMoreBtn');
             const totalContactsElement = document.getElementById('totalContacts');
             const spinner = document.getElementById('checkSpinner');
+
             // Clear previous messages and contacts (only for the first page)
             if (currentPage === 1) {
                 checkMessage.innerText = '';
                 contactsList.innerHTML = '';
             }
+
             // Validate phone number
             const phoneRegex = /^\+?[1-9]\d{9,}$/;
             if (!phoneRegex.test(userPhone)) {
                 checkMessage.innerText = 'Please enter a valid phone number with the country code.';
                 return;
             }
+
             // Show spinner
             spinner.style.display = 'block';
+
             try {
                 const response = await fetch(`/api/checkContacts?phone=${encodeURIComponent(userPhone)}&page=${currentPage}&pageSize=${pageSize}`);
                 const data = await response.json();
+
                 if (response.ok) {
                     totalContacts = data.totalContacts || 0;
+
                     if (data.contacts && data.contacts.length > 0) {
                         if (currentPage === 1) {
                             checkMessage.innerText = 'Here are the registered users:';
                         }
+
                         data.contacts.forEach(contact => {
                             const listItem = document.createElement('li');
                             listItem.innerHTML = `
@@ -391,6 +420,7 @@
                             `;
                             contactsList.appendChild(listItem);
                         });
+
                         // Show "Load More" button if there are more contacts
                         loadMoreBtn.style.display = (currentPage * pageSize < totalContacts) ? 'block' : 'none';
                     } else {
