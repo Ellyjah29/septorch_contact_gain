@@ -6,42 +6,70 @@
   <title>📱 WhatsApp Contact Register</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
   <style>
+    :root {
+      --bg-light: rgba(255, 255, 255, 0.92);
+      --text-light: #2e2e2e;
+      --input-light: #f7f7f7;
+      --border-light: #ddd;
+      --button-bg: #2e86de;
+      --button-hover: #1e6fbf;
+
+      --bg-dark: rgba(22, 22, 22, 0.92);
+      --text-dark: #f0f0f0;
+      --input-dark: #2c2c2c;
+      --border-dark: #444;
+    }
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
       font-family: 'Inter', sans-serif;
+      transition: background 0.3s ease, color 0.3s ease;
     }
 
     body {
-      background: #f5f7fa;
+      background: url('https://images.unsplash.com/photo-1607746882042-944635dfe10e?auto=format&fit=crop&w=1400&q=80') no-repeat center center/cover;
       display: flex;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      color: #333;
+    }
+
+    .toggle-theme {
+      position: absolute;
+      top: 1.2rem;
+      right: 1.2rem;
+      background: var(--button-bg);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-weight: 600;
     }
 
     .container {
-      background: #ffffff;
-      padding: 2rem 2.5rem;
+      background: var(--bg-light);
+      padding: 2.5rem 2rem;
       border-radius: 1rem;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
       width: 100%;
       max-width: 420px;
       text-align: center;
+      backdrop-filter: blur(8px);
+      color: var(--text-light);
     }
 
     h1 {
       font-size: 1.75rem;
-      color: #2e86de;
+      color: var(--button-bg);
       margin-bottom: 0.5rem;
     }
 
     p {
-      margin-bottom: 2rem;
+      margin-bottom: 1.75rem;
       font-size: 0.95rem;
-      color: #666;
     }
 
     form {
@@ -54,22 +82,22 @@
     input[type="email"] {
       padding: 0.8rem 1rem;
       font-size: 1rem;
-      border: 1px solid #ddd;
+      border: 1px solid var(--border-light);
       border-radius: 0.5rem;
-      transition: 0.2s ease;
+      background: var(--input-light);
+      color: var(--text-light);
     }
 
-    input[type="text"]:focus,
-    input[type="email"]:focus {
-      border-color: #2e86de;
+    input:focus {
+      border-color: var(--button-bg);
       outline: none;
     }
 
-    button {
+    button[type="submit"] {
       padding: 0.9rem 1rem;
       font-size: 1rem;
       font-weight: 600;
-      background: #2e86de;
+      background: var(--button-bg);
       color: #fff;
       border: none;
       border-radius: 0.5rem;
@@ -77,19 +105,36 @@
       transition: background 0.3s ease;
     }
 
-    button:hover {
-      background: #1e6fbf;
+    button[type="submit"]:hover {
+      background: var(--button-hover);
     }
 
     .footer {
       margin-top: 1.5rem;
       font-size: 0.85rem;
-      color: #999;
+      color: #888;
+    }
+
+    /* Dark Mode Class */
+    body.dark .container {
+      background: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+    body.dark input[type="text"],
+    body.dark input[type="email"] {
+      background: var(--input-dark);
+      border: 1px solid var(--border-dark);
+      color: var(--text-dark);
+    }
+
+    body.dark .footer {
+      color: #aaa;
     }
 
     @media (max-width: 480px) {
       .container {
-        padding: 1.5rem;
+        padding: 1.8rem;
         border-radius: 0.8rem;
       }
 
@@ -104,6 +149,7 @@
   </style>
 </head>
 <body>
+  <button class="toggle-theme" onclick="toggleTheme()">🌓 Toggle Theme</button>
   <div class="container">
     <h1>📱 Share Your WhatsApp</h1>
     <p>Register your contact to connect with others easily</p>
@@ -144,6 +190,19 @@
         console.error(err);
       }
     });
+
+    // Theme Toggle Logic
+    function toggleTheme() {
+      const darkMode = document.body.classList.toggle('dark');
+      localStorage.setItem('darkMode', darkMode);
+    }
+
+    // Load saved preference
+    window.onload = () => {
+      if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark');
+      }
+    };
   </script>
 </body>
 </html>
