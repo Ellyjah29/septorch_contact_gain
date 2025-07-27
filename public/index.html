@@ -1,208 +1,414 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📱 WhatsApp Contact Register</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
-  <style>
-    :root {
-      --bg-light: rgba(255, 255, 255, 0.92);
-      --text-light: #2e2e2e;
-      --input-light: #f7f7f7;
-      --border-light: #ddd;
-      --button-bg: #2e86de;
-      --button-hover: #1e6fbf;
-
-      --bg-dark: rgba(22, 22, 22, 0.92);
-      --text-dark: #f0f0f0;
-      --input-dark: #2c2c2c;
-      --border-dark: #444;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Inter', sans-serif;
-      transition: background 0.3s ease, color 0.3s ease;
-    }
-
-    body {
-      background: url('https://images.unsplash.com/photo-1607746882042-944635dfe10e?auto=format&fit=crop&w=1400&q=80') no-repeat center center/cover;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-
-    .toggle-theme {
-      position: absolute;
-      top: 1.2rem;
-      right: 1.2rem;
-      background: var(--button-bg);
-      color: white;
-      border: none;
-      border-radius: 30px;
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .container {
-      background: var(--bg-light);
-      padding: 2.5rem 2rem;
-      border-radius: 1rem;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-      width: 100%;
-      max-width: 420px;
-      text-align: center;
-      backdrop-filter: blur(8px);
-      color: var(--text-light);
-    }
-
-    h1 {
-      font-size: 1.75rem;
-      color: var(--button-bg);
-      margin-bottom: 0.5rem;
-    }
-
-    p {
-      margin-bottom: 1.75rem;
-      font-size: 0.95rem;
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    input[type="text"],
-    input[type="email"] {
-      padding: 0.8rem 1rem;
-      font-size: 1rem;
-      border: 1px solid var(--border-light);
-      border-radius: 0.5rem;
-      background: var(--input-light);
-      color: var(--text-light);
-    }
-
-    input:focus {
-      border-color: var(--button-bg);
-      outline: none;
-    }
-
-    button[type="submit"] {
-      padding: 0.9rem 1rem;
-      font-size: 1rem;
-      font-weight: 600;
-      background: var(--button-bg);
-      color: #fff;
-      border: none;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    button[type="submit"]:hover {
-      background: var(--button-hover);
-    }
-
-    .footer {
-      margin-top: 1.5rem;
-      font-size: 0.85rem;
-      color: #888;
-    }
-
-    /* Dark Mode Class */
-    body.dark .container {
-      background: var(--bg-dark);
-      color: var(--text-dark);
-    }
-
-    body.dark input[type="text"],
-    body.dark input[type="email"] {
-      background: var(--input-dark);
-      border: 1px solid var(--border-dark);
-      color: var(--text-dark);
-    }
-
-    body.dark .footer {
-      color: #aaa;
-    }
-
-    @media (max-width: 480px) {
-      .container {
-        padding: 1.8rem;
-        border-radius: 0.8rem;
-      }
-
-      h1 {
-        font-size: 1.5rem;
-      }
-
-      input, button {
-        font-size: 0.95rem;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Septorch Contact Gain</title>
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+            background: url('https://files.catbox.moe/s7xpty.jpg') no-repeat center center fixed;
+            background-size: cover;
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7));
+            z-index: -1;
+        }
+        .container {
+            max-width: 550px;
+            width: 90%;
+            padding: 30px;
+            background: #FFFFFF;
+            border-radius: 15px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            animation: fadeIn 1s ease-in-out;
+        }
+        .logo {
+            width: 120px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            animation: float 4s ease-in-out infinite;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #1E88E5;
+        }
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            color: #444;
+        }
+        form {
+            margin-top: 15px;
+        }
+        input[type="text"],
+        input[type="email"] {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border: 1px solid #DDD;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        input[type="text"]:focus,
+        input[type="email"]:focus {
+            border-color: #1E88E5;
+            box-shadow: 0 0 8px rgba(30, 136, 229, 0.3);
+            outline: none;
+        }
+        button {
+            background: linear-gradient(135deg, #1E88E5, #4FC3F7);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+        button:hover {
+            background: linear-gradient(135deg, #4FC3F7, #1E88E5);
+            transform: scale(1.03);
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #contactsList {
+            margin-top: 20px;
+            text-align: left;
+        }
+        #contactsList li {
+            list-style: none;
+            margin-bottom: 8px;
+            padding: 10px;
+            background: #F7F7F7;
+            border-radius: 8px;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .whatsapp-message-btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .whatsapp-message-btn:hover {
+            background: #128C7E;
+        }
+        .load-more-btn {
+            margin-top: 15px;
+            background: #1E88E5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .total-contacts {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            padding: 12px 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 0.9rem;
+        }
+        footer a {
+            color: #4FC3F7;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+        .spinner {
+            display: none;
+            border: 4px solid #F3F3F3;
+            border-top: 4px solid #1E88E5;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-15px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        /* Dark Mode */
+        body.dark-mode {
+            background: url('https://files.catbox.moe/9mgrg7.jpeg') no-repeat center center fixed;
+            background-size: cover;
+        }
+        body.dark-mode::before {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.85));
+        }
+        body.dark-mode .container {
+            background: #1A1A1A;
+            color: #E0E0E0;
+        }
+        body.dark-mode h1 {
+            color: #4FC3F7;
+        }
+        body.dark-mode p {
+            color: #B0B0B0;
+        }
+        body.dark-mode input[type="text"],
+        body.dark-mode input[type="email"] {
+            background: #2C2C2C;
+            border-color: #444;
+            color: #E0E0E0;
+        }
+        body.dark-mode footer {
+            background: #121212;
+        }
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+            p {
+                font-size: 1rem;
+            }
+            button {
+                padding: 12px 24px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <button class="toggle-theme" onclick="toggleTheme()">🌓 Toggle Theme</button>
-  <div class="container">
-    <h1>📱 Share Your WhatsApp</h1>
-    <p>Register your contact to connect with others easily</p>
-    <form id="registerForm" action="/api/register" method="POST">
-      <input type="text" name="name" placeholder="Your Full Name" required />
-      <input type="email" name="email" placeholder="Email Address" required />
-      <input type="text" name="phone" placeholder="WhatsApp Number (e.g., +234...)" required />
-      <button type="submit">Register Contact</button>
-    </form>
-    <div class="footer">
-      &copy; 2025 SEPTORCH Network
+    <div class="container">
+        <img src="https://files.catbox.moe/mdeuf8.jpeg" alt="Septorch Contact Gain Logo" class="logo">
+        <h1>Septorch Contact Gain</h1>
+        <p>
+            Tired of low WhatsApp engagement? Add your contact weekly and receive a VCF file with new contacts every Sunday via email. No tasks, no ads, just growth!
+        </p>
+        <form id="registerForm">
+            <input type="text" id="name" placeholder="Your Name" required aria-label="Your Name">
+            <input type="email" id="email" placeholder="Email Address" required aria-label="Email Address">
+            <input type="text" id="whatsappNumber" placeholder="WhatsApp Number (e.g., +2341234567890)" required aria-label="WhatsApp Number">
+            <button type="submit" aria-label="Join Now Button">Join Now</button>
+            <div class="spinner" id="spinner"></div>
+        </form>
+        <p id="message" aria-live="assertive"></p>
+        <div id="confirmationMessage" aria-live="polite"></div>
+        <div id="referralLinkDisplay"></div>
+        <div id="checkContactsSection" style="margin-top: 20px;">
+            <h2>Check Contacts</h2>
+            <form id="checkContactsForm">
+                <input type="text" id="userPhone" placeholder="Enter your phone number (e.g., +2341234567890)" required aria-label="Phone Number">
+                <button type="submit">Check Contacts</button>
+            </form>
+            <p id="checkMessage"></p>
+            <ul id="contactsList"></ul>
+            <button class="load-more-btn" id="loadMoreBtn" style="display: none;">Load More</button>
+            <p class="total-contacts" id="totalContacts"></p>
+            <div class="spinner" id="checkSpinner"></div>
+        </div>
     </div>
-  </div>
-
-  <script>
-    const form = document.getElementById('registerForm');
-    form.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const data = Object.fromEntries(formData.entries());
-
-      try {
-        const res = await fetch('/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-        const result = await res.json();
-
-        if (res.ok) {
-          alert('✅ Registered successfully!');
-          form.reset();
-        } else {
-          alert(`❌ ${result.error}`);
+    <footer>
+        <p>
+            Powered by <a href="https://www.tiktok.com/@septorch" target="_blank">Septorch</a> | 
+            <a href="https://whatsapp.com/channel/0029Vb1ydGk8qIzkvps0nZ04" target="_blank">Join Our WhatsApp Channel</a> |
+            <button onclick="toggleDarkMode()" style="background: none; border: none; color: white; cursor: pointer;">
+                <i class="fas fa-moon"></i>
+            </button>
+        </p>
+    </footer>
+    <script>
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
         }
-      } catch (err) {
-        alert('❌ Something went wrong. Please try again.');
-        console.error(err);
-      }
-    });
 
-    // Theme Toggle Logic
-    function toggleTheme() {
-      const darkMode = document.body.classList.toggle('dark');
-      localStorage.setItem('darkMode', darkMode);
-    }
+        // Registration Form Submission
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const whatsappNumber = document.getElementById('whatsappNumber').value.trim();
+            const messageElement = document.getElementById('message');
+            const confirmationMessageElement = document.getElementById('confirmationMessage');
+            const referralLinkDisplay = document.getElementById('referralLinkDisplay');
+            const spinner = document.getElementById('spinner');
 
-    // Load saved preference
-    window.onload = () => {
-      if (localStorage.getItem('darkMode') === 'true') {
-        document.body.classList.add('dark');
-      }
-    };
-  </script>
+            // Clear previous messages
+            messageElement.innerText = "";
+            confirmationMessageElement.innerText = "";
+            referralLinkDisplay.innerHTML = "";
+
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                messageElement.innerText = "Please enter a valid email address.";
+                return;
+            }
+
+            // Validate phone number
+            const phoneRegex = /^\+?[1-9]\d{9,}$/;
+            if (!phoneRegex.test(whatsappNumber)) {
+                messageElement.innerText = "Please enter a valid phone number with the country code (e.g., +2341234567890).";
+                return;
+            }
+
+            // Show spinner
+            spinner.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, phone: whatsappNumber })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    confirmationMessageElement.innerHTML = `
+                        <p>Thank you for joining! Your VCF file will be sent to your email every Sunday.</p>
+                    `;
+                    referralLinkDisplay.innerHTML = `
+                        <p>Want faster growth? Join our WhatsApp Channel for updates!</p>
+                        <button onclick="window.open('https://whatsapp.com/channel/0029Vb1ydGk8qIzkvps0nZ04', '_blank')">Join Our WhatsApp Channel</button>
+                    `;
+                } else {
+                    messageElement.innerText = data.error || "Failed to register. Please try again later.";
+                }
+            } catch (error) {
+                messageElement.innerText = "An error occurred. Please try again later.";
+            } finally {
+                spinner.style.display = 'none';
+            }
+        });
+
+        // Check Contacts Form Submission
+        let currentPage = 1;
+        const pageSize = 10;
+        let totalContacts = 0;
+        document.getElementById('checkContactsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            currentPage = 1;
+            fetchContacts();
+        });
+        document.getElementById('loadMoreBtn').addEventListener('click', () => {
+            currentPage++;
+            fetchContacts();
+        });
+
+        async function fetchContacts() {
+            const userPhone = document.getElementById('userPhone').value.trim();
+            const checkMessage = document.getElementById('checkMessage');
+            const contactsList = document.getElementById('contactsList');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            const totalContactsElement = document.getElementById('totalContacts');
+            const spinner = document.getElementById('checkSpinner');
+
+            if (currentPage === 1) {
+                checkMessage.innerText = '';
+                contactsList.innerHTML = '';
+            }
+
+            const phoneRegex = /^\+?[1-9]\d{9,}$/;
+            if (!phoneRegex.test(userPhone)) {
+                checkMessage.innerText = 'Please enter a valid phone number with the country code.';
+                return;
+            }
+
+            spinner.style.display = 'block';
+
+            try {
+                const response = await fetch(`/api/checkContacts?phone=${encodeURIComponent(userPhone)}&page=${currentPage}&pageSize=${pageSize}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    totalContacts = data.totalContacts || 0;
+
+                    if (data.contacts && data.contacts.length > 0) {
+                        if (currentPage === 1) {
+                            checkMessage.innerText = 'Here are the registered users:';
+                        }
+
+                        data.contacts.forEach(contact => {
+                            const listItem = document.createElement('li');
+                            listItem.innerHTML = `
+                                <span>${contact.name}</span>
+                                <button class="whatsapp-message-btn" onclick="sendMessage('${contact.phone}')">
+                                    <i class="fab fa-whatsapp"></i> Message
+                                </button>
+                            `;
+                            contactsList.appendChild(listItem);
+                        });
+
+                        loadMoreBtn.style.display = (currentPage * pageSize < totalContacts) ? 'block' : 'none';
+                    } else {
+                        checkMessage.innerText = 'No contacts found or you are not authorized to view them.';
+                    }
+                } else {
+                    checkMessage.innerText = data.error || 'Failed to fetch contacts.';
+                }
+            } catch (error) {
+                checkMessage.innerText = 'An error occurred. Please try again later.';
+            } finally {
+                spinner.style.display = 'none';
+                totalContactsElement.innerText = `Total Contacts: ${totalContacts}`;
+            }
+        }
+
+        function sendMessage(phoneNumber) {
+            const message = encodeURIComponent('Hello! I saw your contact on Septorch Contact Gain.');
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+            window.open(whatsappUrl, '_blank');
+        }
+    </script>
 </body>
 </html>
